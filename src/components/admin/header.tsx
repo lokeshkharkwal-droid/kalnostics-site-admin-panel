@@ -31,7 +31,7 @@ export function AdminHeader({ title, subtitle, actions }: AdminHeaderProps) {
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-notion-line bg-white px-5">
       {/* Left — breadcrumb-style title */}
       <div className="flex items-baseline gap-2 min-w-0">
-        <h1 className="truncate text-sm font-medium text-notion-text">{title}</h1>
+        <h1 className="truncate text-md font-medium text-notion-text">{title}</h1>
         {subtitle && <p className="hidden truncate text-xs text-notion-faint sm:block">· {subtitle}</p>}
       </div>
 
@@ -50,9 +50,9 @@ export function AdminHeader({ title, subtitle, actions }: AdminHeaderProps) {
             <button
               onClick={handleLogout}
               title="Sign out"
-              className="flex h-9 w-9 items-center justify-center rounded-md text-notion-faint transition-colors hover:bg-notion-hover hover:text-notion-red"
+              className="flex h-10 w-10 items-center justify-center rounded-md text-notion-faint transition-colors hover:bg-notion-hover hover:text-notion-red"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
