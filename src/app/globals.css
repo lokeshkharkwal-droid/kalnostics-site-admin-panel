@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* Compact form label used in drawers */
+  .label-sm {
+    @apply block text-xs font-medium text-notion-sub mb-1;
+  }
+  /* Compact select used in drawers */
+  .sel-sm {
+    @apply rounded border border-notion-line2 px-3 py-2 text-sm bg-white text-notion-text focus:outline-none focus:ring-2 focus:ring-notion-blue/30 focus:border-notion-blue;
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-white text-notion-text antialiased;
+    font-family: 'ui-sans-serif', system-ui, -apple-system, BlinkMacSystemFont,
+      'Segoe UI', 'Inter', Helvetica, Arial, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Notion-style text selection */
+  ::selection {
+    background: rgba(35, 131, 226, 0.18);
+  }
+
+  /* Thin, unobtrusive scrollbars */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(55, 53, 47, 0.18);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(55, 53, 47, 0.30);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+  }
+}
