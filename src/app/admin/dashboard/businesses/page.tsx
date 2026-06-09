@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { AdminHeader } from '@/components/admin/header'
@@ -86,37 +86,43 @@ export default function BusinessesPage() {
   })
   const [formError, setFormError] = useState('')
 
-  // Fetch all tenants — API returns Tenant[] (non-paginated)
-  // Client-side search + pagination is acceptable for SiteAdmin (few hundred tenants max)
-  const { data: allTenants = [], isLoading } = useQuery({
-    queryKey: ['siteadmin', 'tenants'],
+  // Debounce the free-text search so we fire one request after typing settles,
+  // not one per keystroke. Resetting to page 1 keeps results meaningful.
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // Server-side search + status filter + pagination. The backend returns
+  // { data, total, page, limit }; the API interceptor hoists pagination into
+  // `res.meta`. `keepPreviousData` keeps the current page visible while the
+  // next one loads (no flicker on prev/next).
+  const { data, isLoading } = useQuery({
+    queryKey: ['siteadmin', 'tenants', { search: debouncedSearch, status: statusFilter, page }],
     queryFn: async () => {
-      const res = await api.get<Tenant[]>('/api/v1/siteadmin/tenants')
-      const list = res.data as Tenant[]
+      const params: Record<string, string | number> = { page, limit: LIMIT }
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim()
+      if (statusFilter) params.status = statusFilter
+      const res = await api.get<Tenant[]>('/api/v1/siteadmin/tenants', { params })
+      const meta = (res as { meta?: { total?: number; totalPages?: number } }).meta ?? {}
       // Backend returns subscriptionStatus as an UPPERCASE Prisma enum; this UI
       // keys its status maps/filters in lowercase. Normalise on the way in.
-      return list.map(t => ({ ...t, subscriptionStatus: t.subscriptionStatus.toLowerCase() }))
+      const rows = (res.data as Tenant[]).map(t => ({
+        ...t,
+        subscriptionStatus: t.subscriptionStatus.toLowerCase(),
+      }))
+      return { rows, total: meta.total ?? rows.length, totalPages: meta.totalPages ?? 1 }
     },
+    placeholderData: keepPreviousData,
   })
 
-  // Client-side search + status filter
-  const filtered = useMemo(() => {
-    let result = allTenants
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      result = result.filter(t =>
-        t.name.toLowerCase().includes(q) || t.slug.includes(q),
-      )
-    }
-    if (statusFilter) {
-      result = result.filter(t => t.subscriptionStatus === statusFilter)
-    }
-    return result
-  }, [allTenants, search, statusFilter])
-
-  const total = filtered.length
-  const totalPages = Math.ceil(total / LIMIT)
-  const tenants = filtered.slice((page - 1) * LIMIT, page * LIMIT)
+  const tenants = data?.rows ?? []
+  const total = data?.total ?? 0
+  const totalPages = data?.totalPages ?? 1
 
   const createMutation = useMutation({
     mutationFn: (body: CreateTenantForm) => {
@@ -169,8 +175,8 @@ export default function BusinessesPage() {
   }
 
   function handleSearchChange(val: string) {
+    // Page reset happens in the debounce effect once typing settles.
     setSearch(val)
-    setPage(1)
   }
 
   function handleStatusChange(val: string) {
@@ -195,7 +201,7 @@ export default function BusinessesPage() {
         <div className="flex items-center gap-3">
           <div className="w-72">
             <Input
-              placeholder="Search by name or slug…"
+              placeholder="Search by name, slug or email…"
               value={search}
               onChange={e => handleSearchChange(e.target.value)}
             />

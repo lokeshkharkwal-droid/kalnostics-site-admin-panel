@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { AdminHeader } from '@/components/admin/header'
 import { Card, CardContent } from '@/components/ui/card'
@@ -50,6 +50,8 @@ const ROLE_VARIANT: Record<SiteAdminRole, 'default' | 'info' | 'warning' | 'dang
 // Roles available when creating a sub-admin (super_owner cannot be created via API)
 const CREATABLE_ROLES: SiteAdminRole[] = ['content_admin', 'operations_admin', 'full_admin']
 
+const LIMIT = 20
+
 const INITIAL_FORM: CreateAdminForm = {
   firstName: '',
   lastName: '',
@@ -68,32 +70,49 @@ export default function AdminUsersPage() {
   const [changePasswordFor, setChangePasswordFor] = useState<SiteAdminUser | null>(null)
   const [newPassword, setNewPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
+  const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<SiteAdminRole | ''>('')
-  const [statusFilter, setStatusFilter] = useState<'active' | 'deactivated' | ''>('')
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | ''>('')
+  const [page, setPage] = useState(1)
 
-  const { data: allAdmins = [], isLoading } = useQuery({
-    queryKey: ['siteadmin', 'users'],
+  // Debounce the free-text search so we fire one request after typing settles,
+  // not one per keystroke. Resetting to page 1 keeps results meaningful.
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // Server-side search + role/status filter + pagination. The backend returns
+  // { data, total, page, limit }; the API interceptor hoists pagination into
+  // `res.meta`. `keepPreviousData` avoids a flicker on prev/next.
+  const { data, isLoading } = useQuery({
+    queryKey: ['siteadmin', 'users', { search: debouncedSearch, role: roleFilter, status: statusFilter, page }],
     queryFn: async () => {
-      const res = await api.get<SiteAdminUser[]>('/api/v1/siteadmin/users')
-      const list = res.data as SiteAdminUser[]
+      const params: Record<string, string | number> = { page, limit: LIMIT }
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim()
+      // Backend validates role against the UPPERCASE Prisma enum.
+      if (roleFilter) params.role = roleFilter.toUpperCase()
+      if (statusFilter) params.status = statusFilter
+      const res = await api.get<SiteAdminUser[]>('/api/v1/siteadmin/users', { params })
+      const meta = (res as { meta?: { total?: number; totalPages?: number } }).meta ?? {}
       // Backend emits role as an UPPERCASE Prisma enum (e.g. "SUPER_OWNER");
       // this UI keys its role maps in lowercase. Normalise on the way in.
-      return list.map(a => ({ ...a, role: a.role.toLowerCase() as SiteAdminRole }))
+      const rows = (res.data as SiteAdminUser[]).map(a => ({
+        ...a,
+        role: a.role.toLowerCase() as SiteAdminRole,
+      }))
+      return { rows, total: meta.total ?? rows.length, totalPages: meta.totalPages ?? 1 }
     },
+    placeholderData: keepPreviousData,
   })
 
-  const admins = useMemo(() => {
-    let result = allAdmins
-    if (roleFilter) {
-      result = result.filter(a => a.role === roleFilter)
-    }
-    if (statusFilter === 'active') {
-      result = result.filter(a => a.isActive)
-    } else if (statusFilter === 'deactivated') {
-      result = result.filter(a => !a.isActive)
-    }
-    return result
-  }, [allAdmins, roleFilter, statusFilter])
+  const admins = data?.rows ?? []
+  const total = data?.total ?? 0
+  const totalPages = data?.totalPages ?? 1
 
   const createMutation = useMutation({
     mutationFn: (body: CreateAdminForm) =>
@@ -186,9 +205,16 @@ export default function AdminUsersPage() {
       <main className="flex-1 p-6 space-y-4">
         {/* Filters */}
         <div className="flex items-center gap-3">
+          <div className="w-64">
+            <Input
+              placeholder="Search by name or email…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
           <select
             value={roleFilter}
-            onChange={e => setRoleFilter(e.target.value as SiteAdminRole | '')}
+            onChange={e => { setRoleFilter(e.target.value as SiteAdminRole | ''); setPage(1) }}
             className="h-9 rounded-md border border-notion-line2 bg-white px-3 text-sm text-notion-text focus:outline-none focus:ring-2 focus:ring-notion-blue"
           >
             <option value="">All Roles</option>
@@ -198,23 +224,23 @@ export default function AdminUsersPage() {
           </select>
           <select
             value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as 'active' | 'deactivated' | '')}
+            onChange={e => { setStatusFilter(e.target.value as 'active' | 'inactive' | ''); setPage(1) }}
             className="h-9 rounded-md border border-notion-line2 bg-white px-3 text-sm text-notion-text focus:outline-none focus:ring-2 focus:ring-notion-blue"
           >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
-            <option value="deactivated">Deactivated</option>
+            <option value="inactive">Deactivated</option>
           </select>
-          {(roleFilter || statusFilter) && (
+          {(search || roleFilter || statusFilter) && (
             <button
-              onClick={() => { setRoleFilter(''); setStatusFilter('') }}
+              onClick={() => { setSearch(''); setRoleFilter(''); setStatusFilter(''); setPage(1) }}
               className="text-xs text-notion-faint hover:text-notion-sub"
             >
               Clear filters
             </button>
           )}
           <span className="ml-auto text-xs text-notion-faint">
-            {admins.length} of {allAdmins.length} accounts
+            {total} {total === 1 ? 'account' : 'accounts'}
           </span>
         </div>
 
@@ -224,7 +250,7 @@ export default function AdminUsersPage() {
               <PageLoader />
             ) : admins.length === 0 ? (
               <div className="py-16 text-center text-sm text-notion-faint">
-                {(roleFilter || statusFilter) ? 'No accounts match the selected filters' : 'No admin accounts found'}
+                {(search || roleFilter || statusFilter) ? 'No accounts match the selected filters' : 'No admin accounts found'}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -306,6 +332,23 @@ export default function AdminUsersPage() {
               </div>
             )}
           </CardContent>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-notion-line px-5 py-3">
+              <p className="text-xs text-notion-sub">
+                Showing {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, total)} of {total}
+              </p>
+              <div className="flex gap-1.5">
+                <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+                  ← Prev
+                </Button>
+                <Button variant="secondary" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                  Next →
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </main>
 
