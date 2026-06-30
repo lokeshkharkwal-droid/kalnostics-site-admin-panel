@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Providers } from '@/components/providers'
+import { QueryProvider } from '@/app/providers/QueryProvider'
 import './globals.css'
 
 /**
@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   )
