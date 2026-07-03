@@ -39,6 +39,8 @@ const config: Config = {
         // Soft, low-contrast elevation — Notion leans on borders, not shadows
         notion: '0 1px 2px rgba(15,15,15,0.05), 0 2px 8px rgba(15,15,15,0.04)',
         'notion-lg': '0 4px 16px rgba(15,15,15,0.10), 0 0 0 1px rgba(15,15,15,0.04)',
+        // Floating glass-card elevation for the premium DataTable
+        soft: '0 8px 30px -12px rgba(15,15,15,0.12), 0 2px 8px -4px rgba(15,15,15,0.06)',
       },
       keyframes: {
         fadeInUp: {

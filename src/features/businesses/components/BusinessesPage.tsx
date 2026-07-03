@@ -1,16 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/widgets/AdminHeader'
-import { Button, Input, Badge, DataTable, type Column } from '@/shared/ui'
+import { Button, Input, Badge, DataTable, ActionMenu, Modal, type Column } from '@/shared/ui'
 import { useDebouncedValue } from '@/shared/hooks'
 import { STATUS_VARIANT, STATUS_LABEL, STATUS_OPTIONS } from '@/entities/tenant'
-import { listTenants } from '../services/businesses.api'
+import { listTenants, suspendTenant, reactivateTenant } from '../services/businesses.api'
 import type { ICreatedCredentials } from '../interfaces'
 import { CreateBusinessModal } from './CreateBusinessModal'
 import { CredentialsCard } from './CredentialsCard'
+import { ConfigurationModal } from './ConfigurationModal'
+import { SettingsModal } from './SettingsModal'
 
 const LIMIT = 20
 
@@ -21,6 +23,9 @@ export function BusinessesPage() {
   const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [createdCreds, setCreatedCreds] = useState<ICreatedCredentials | null>(null)
+  const [modal, setModal] = useState<{ tenantId: string; kind: 'config' | 'settings' } | null>(null)
+  const [confirm, setConfirm] = useState<{ id: string; name: string; action: 'suspend' | 'reactivate' } | null>(null)
+  const queryClient = useQueryClient()
 
   // Debounce the free-text search so we fire one request after typing settles,
   // not one per keystroke. Resetting to page 1 keeps results meaningful.
@@ -37,6 +42,17 @@ export function BusinessesPage() {
   const tenants = data?.rows ?? []
   const total = data?.total ?? 0
   const totalPages = data?.totalPages ?? 1
+
+  // Suspend / reactivate a business, then refresh the list so the status badge
+  // and the row's Actions menu (Suspend ↔ Reactivate) update.
+  const statusMutation = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: 'suspend' | 'reactivate' }) =>
+      action === 'suspend' ? suspendTenant(id) : reactivateTenant(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['siteadmin', 'tenants'] })
+      setConfirm(null)
+    },
+  })
 
   function handleStatusChange(val: string) {
     setStatusFilter(val)
@@ -129,6 +145,19 @@ export function BusinessesPage() {
           loading={isLoading}
           emptyMessage={(search || statusFilter) ? 'No businesses match the selected filters' : 'No businesses yet. Create the first one.'}
           onRowClick={t => router.push(`/businesses/${t.id}`)}
+          actions={t => (
+            <ActionMenu
+              items={[
+                { label: 'Edit', onClick: () => router.push(`/businesses/${t.id}?edit=1`) },
+                { label: 'Configuration', onClick: () => setModal({ tenantId: t.id, kind: 'config' }) },
+                { label: 'Settings', onClick: () => setModal({ tenantId: t.id, kind: 'settings' }) },
+                t.subscriptionStatus === 'suspended'
+                  ? { label: 'Reactivate', onClick: () => setConfirm({ id: t.id, name: t.name, action: 'reactivate' }) }
+                  : { label: 'Suspend', variant: 'danger', onClick: () => setConfirm({ id: t.id, name: t.name, action: 'suspend' }) },
+              ]}
+            />
+          )}
+          actionsWidth={80}
           pagination={{ page, totalPages, total, limit: LIMIT, onPageChange: setPage }}
         />
       </main>
@@ -144,6 +173,51 @@ export function BusinessesPage() {
       {/* Credentials card — shown once after business creation */}
       {createdCreds && (
         <CredentialsCard creds={createdCreds} onDone={() => setCreatedCreds(null)} />
+      )}
+
+      {/* Configuration / Settings modals — opened from a row's Actions menu */}
+      {modal?.kind === 'config' && (
+        <ConfigurationModal tenantId={modal.tenantId} onClose={() => setModal(null)} />
+      )}
+      {modal?.kind === 'settings' && (
+        <SettingsModal tenantId={modal.tenantId} onClose={() => setModal(null)} />
+      )}
+
+      {/* Suspend / reactivate confirmation — opened from a row's Actions menu */}
+      {confirm && (
+        <Modal
+          title={confirm.action === 'suspend' ? 'Suspend business?' : 'Reactivate business?'}
+          size="sm"
+          onClose={() => setConfirm(null)}
+          footer={
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setConfirm(null)}
+                disabled={statusMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant={confirm.action === 'suspend' ? 'danger' : 'primary'}
+                size="sm"
+                loading={statusMutation.isPending}
+                onClick={() => statusMutation.mutate({ id: confirm.id, action: confirm.action })}
+              >
+                {confirm.action === 'suspend' ? 'Suspend' : 'Reactivate'}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-notion-sub">
+            {confirm.action === 'suspend' ? (
+              <>Suspending <span className="font-medium text-notion-text">{confirm.name}</span> will block access for this business until it is reactivated.</>
+            ) : (
+              <>Reactivating <span className="font-medium text-notion-text">{confirm.name}</span> will restore access for this business.</>
+            )}
+          </p>
+        </Modal>
       )}
     </div>
   )

@@ -31,7 +31,6 @@ export function SettingsTab({
             <ReadField label="Currency" value={tenant.settings?.currency} />
             <ReadField label="Date Format" value={tenant.settings?.date_format} />
             <ReadField label="Language" value={tenant.settings?.language} />
-            <ReadField label="App Name (white-label)" value={tenant.settings?.app_name} />
           </div>
         ) : (
           form && (
@@ -64,13 +63,6 @@ export function SettingsTab({
                 value={form.settings.language}
                 onChange={e => setForm(f => f && ({ ...f, settings: { ...f.settings, language: e.target.value } }))}
                 placeholder="en"
-                disabled={updating}
-              />
-              <Input
-                label="App Name (white-label)"
-                value={form.settings.app_name}
-                onChange={e => setForm(f => f && ({ ...f, settings: { ...f.settings, app_name: e.target.value } }))}
-                placeholder="Custom name shown in the business's UI"
                 disabled={updating}
               />
 

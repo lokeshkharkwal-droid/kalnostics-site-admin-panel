@@ -2,14 +2,22 @@
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button, Input, PhoneInput } from '@/shared/ui'
+import { Button, Input, Label, PaginatedSelect, PhoneInput } from '@/shared/ui'
+import {
+  fetchAreaOptionsPage,
+  fetchCityOptionsPage,
+  fetchCountryOptionsPage,
+  fetchStateOptionsPage,
+} from '@/features/locations/services/locations.api'
 import { createTenant } from '../services/businesses.api'
-import { slugify } from '../utils'
 import type { ICreateBusinessModalProps, ICreateTenantForm } from '../interfaces'
 
 const EMPTY_FORM: ICreateTenantForm = {
-  name: '', slug: '', email: '', phoneCountryCode: '+91', phone: '',
-  adminFirstName: '', adminLastName: '', adminPhoneCountryCode: '+91', adminPhone: '', adminEmail: '',
+  name: '', email: '', phoneCountryCode: '+91', phone: '',
+  shortName: '', addressLine: '', pincode: '',
+  country: null, state: null, city: null, area: null,
+  logoUrl: '', photoUrl: '',
+  adminFirstName: '', adminMiddleName: '', adminLastName: '', adminPhoneCountryCode: '+91', adminPhone: '', adminEmail: '',
 }
 
 export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModalProps) {
@@ -34,7 +42,6 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
     setFormError('')
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!form.name.trim()) { setFormError('Business name is required'); return }
-    if (!form.slug.trim()) { setFormError('Slug is required'); return }
     if (!form.email.trim()) { setFormError('Business email is required'); return }
     if (!emailPattern.test(form.email.trim())) { setFormError('Enter a valid business email'); return }
     if (!form.phone.trim()) { setFormError('Business phone is required'); return }
@@ -46,9 +53,8 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
     createMutation.mutate(form)
   }
 
-  // Auto-generate slug from name (only if slug hasn't been manually edited)
   function handleNameChange(name: string) {
-    setForm(f => ({ ...f, name, slug: f.slug || slugify(name) }))
+    setForm(f => ({ ...f, name }))
   }
 
   return (
@@ -76,14 +82,6 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
             placeholder="City Diagnostics"
             disabled={createMutation.isPending}
           />
-          <Input
-            label="Slug *"
-            value={form.slug}
-            onChange={e => setForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
-            placeholder="city-diagnostics"
-            hint="Subdomain: city-diagnostics.kaltros.com"
-            disabled={createMutation.isPending}
-          />
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="Business email *"
@@ -103,6 +101,99 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
               disabled={createMutation.isPending}
             />
           </div>
+          <Input
+            label="Short name"
+            value={form.shortName}
+            onChange={e => setForm(f => ({ ...f, shortName: e.target.value }))}
+            placeholder="CityDx"
+            disabled={createMutation.isPending}
+          />
+
+          {/* Address */}
+          <Input
+            label="Address"
+            value={form.addressLine}
+            onChange={e => setForm(f => ({ ...f, addressLine: e.target.value }))}
+            placeholder="12 MG Road"
+            disabled={createMutation.isPending}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <Label>Country</Label>
+              <PaginatedSelect
+                value={form.country}
+                onChange={opt => setForm(f => ({ ...f, country: opt, state: null, city: null, area: null }))}
+                queryKey={['siteadmin', 'country-options']}
+                fetchPage={fetchCountryOptionsPage}
+                placeholder="Select country"
+                emptyText="No countries"
+                disabled={createMutation.isPending}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label>State</Label>
+              <PaginatedSelect
+                value={form.state}
+                onChange={opt => setForm(f => ({ ...f, state: opt, city: null, area: null }))}
+                queryKey={['siteadmin', 'state-options', form.country?.id ?? null]}
+                fetchPage={p => fetchStateOptionsPage({ ...p, countryId: form.country?.id })}
+                placeholder={form.country ? 'Select state' : 'Select a country first'}
+                emptyText="No states"
+                disabled={createMutation.isPending || !form.country}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <Label>City</Label>
+              <PaginatedSelect
+                value={form.city}
+                onChange={opt => setForm(f => ({ ...f, city: opt, area: null }))}
+                queryKey={['siteadmin', 'city-options', form.state?.id ?? null]}
+                fetchPage={p => fetchCityOptionsPage({ ...p, stateId: form.state?.id, countryId: form.country?.id })}
+                placeholder={form.state ? 'Select city' : 'Select a state first'}
+                emptyText="No cities"
+                disabled={createMutation.isPending || !form.state}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label>Locality</Label>
+              <PaginatedSelect
+                value={form.area}
+                onChange={opt => setForm(f => ({ ...f, area: opt }))}
+                queryKey={['siteadmin', 'area-options', form.city?.id ?? null]}
+                fetchPage={p => fetchAreaOptionsPage({ ...p, cityId: form.city?.id, stateId: form.state?.id, countryId: form.country?.id })}
+                placeholder={form.city ? 'Select locality' : 'Select a city first'}
+                emptyText="No localities"
+                disabled={createMutation.isPending || !form.city}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Zip / Pin code"
+              value={form.pincode}
+              onChange={e => setForm(f => ({ ...f, pincode: e.target.value }))}
+              placeholder="560001"
+              disabled={createMutation.isPending}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Logo URL"
+              value={form.logoUrl}
+              onChange={e => setForm(f => ({ ...f, logoUrl: e.target.value }))}
+              placeholder="https://…/logo.png"
+              disabled={createMutation.isPending}
+            />
+            <Input
+              label="Photo URL"
+              value={form.photoUrl}
+              onChange={e => setForm(f => ({ ...f, photoUrl: e.target.value }))}
+              placeholder="https://…/photo.jpg"
+              disabled={createMutation.isPending}
+            />
+          </div>
 
           {/* Business admin account */}
           <div className="border-t border-notion-line pt-3">
@@ -110,12 +201,19 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
               Business Admin Account
               <span className="ml-2 font-normal normal-case text-notion-faint">Login credentials will be generated</span>
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <Input
                 label="First name *"
                 value={form.adminFirstName}
                 onChange={e => setForm(f => ({ ...f, adminFirstName: e.target.value }))}
                 placeholder="Dilip"
+                disabled={createMutation.isPending}
+              />
+              <Input
+                label="Middle name"
+                value={form.adminMiddleName}
+                onChange={e => setForm(f => ({ ...f, adminMiddleName: e.target.value }))}
+                placeholder="Raj"
                 disabled={createMutation.isPending}
               />
               <Input

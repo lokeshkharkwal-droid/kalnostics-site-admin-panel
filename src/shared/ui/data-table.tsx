@@ -1,16 +1,19 @@
 'use client'
 
 import { useRef, useState, type ReactNode } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { cn } from '@/shared/utils'
 import { Button } from './button'
+import { ChevronLeftIcon, ChevronRightIcon } from './icons'
 
 /* ═══════════════════════════════════════
    DATA TABLE
    One config-driven table for the whole Site Admin app. Columns are declared as
-   data (header + cell render fn); the component owns the chrome: a unified
-   Notion-style header, resizable columns, ellipsis truncation with an
-   overflow-aware hover tooltip, an optional sticky Actions column, row-click,
-   and optional pagination. See any *Grid / *Table component for usage.
+   data (header + cell render fn); the component owns the chrome: a premium glass
+   card over a soft gradient, gradient uppercase header, zebra rows, resizable
+   columns, ellipsis truncation with an overflow-aware hover tooltip, an optional
+   Actions column that reveals on row hover, row-click, pagination, and subtle
+   Framer Motion entrance/hover animations. See any *Grid / *Table for usage.
 ═══════════════════════════════════════ */
 
 export interface Column<T> {
@@ -57,6 +60,9 @@ interface DataTableProps<T> {
   actionsWidth?: number
   onRowClick?: (row: T) => void
   pagination?: TablePagination
+  /** Render the gradient backdrop + glass card chrome. Default true. Set false
+   *  when embedding the table inside another card (e.g. the dashboard). */
+  frame?: boolean
   className?: string
 }
 
@@ -86,19 +92,29 @@ function TruncatedCell({ children, tooltip }: { children: ReactNode; tooltip?: s
   return (
     <div className="relative" onMouseEnter={handleEnter} onMouseLeave={() => setShow(false)}>
       <div ref={ref} className="truncate">{children}</div>
-      {show && overflowing && tip && (
-        <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 max-w-xs whitespace-normal break-words rounded-md border border-notion-line2 bg-white px-2 py-1 text-xs text-notion-text shadow-notion-lg">
-          {tip}
-        </div>
-      )}
+      <AnimatePresence>
+        {show && overflowing && tip && (
+          <motion.div
+            initial={{ opacity: 0, y: -2 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12 }}
+            className="pointer-events-none absolute left-0 top-full z-50 mt-1 max-w-xs whitespace-normal break-words rounded-lg border border-notion-line2 bg-white px-2.5 py-1.5 text-xs text-notion-text shadow-soft"
+          >
+            {tip}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
 export function DataTable<T>({
   columns, rows, rowKey, loading, emptyMessage = 'No records found',
-  startIndex = 0, actions, actionsHeader = 'Actions', actionsWidth = 160, onRowClick, pagination, className,
+  startIndex = 0, actions, actionsHeader = 'Actions', actionsWidth = 160,
+  onRowClick, pagination, frame = true, className,
 }: DataTableProps<T>) {
+  const reduce = useReducedMotion()
   const colId = (c: Column<T>) => c.id ?? (typeof c.header === 'string' ? c.header : '')
 
   // Width state, keyed by column id (+ the synthetic actions column).
@@ -129,51 +145,70 @@ export function DataTable<T>({
     columns.reduce((sum, c) => sum + (widths[colId(c)] ?? DEFAULT_WIDTH), 0) +
     (actions ? widths[ACTIONS_ID] ?? actionsWidth : 0)
 
-  return (
-    <div className={cn('rounded-lg border border-notion-line bg-white', className)}>
-      <div className="overflow-x-auto">
-        <table
-          className="border-collapse text-sm"
-          style={{ tableLayout: 'fixed', width: totalWidth, minWidth: '100%' }}
-        >
-          <colgroup>
-            {columns.map(c => <col key={colId(c)} style={{ width: widths[colId(c)] }} />)}
-            {actions && <col style={{ width: widths[ACTIONS_ID] }} />}
-          </colgroup>
+  // Re-mounting the body whenever the data set changes replays the stagger.
+  const bodyKey = rows.map(rowKey).join('|')
 
-          <thead>
-            <tr className="border-b border-notion-line bg-notion-panel text-notion-sub">
-              {columns.map(c => {
-                const id = colId(c)
-                const resizable = c.resizable ?? true
-                return (
-                  <th
-                    key={id}
-                    className={cn('relative px-3 py-2 font-medium', alignClass(c.align), c.headerClassName)}
-                  >
-                    <span className="block truncate">{c.header}</span>
-                    {resizable && (
-                      <span
-                        onPointerDown={e => startResize(e, id, c.minWidth ?? DEFAULT_MIN)}
-                        className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize select-none hover:bg-notion-blue/30"
-                      />
-                    )}
-                  </th>
-                )
-              })}
-              {actions && (
-                <th className="px-3 py-2 text-left font-medium">{actionsHeader}</th>
-              )}
-            </tr>
-          </thead>
+  const containerVariants = {
+    hidden: {},
+    show: { transition: { staggerChildren: reduce ? 0 : 0.025 } },
+  }
+  const rowVariants = {
+    hidden: reduce ? { opacity: 1 } : { opacity: 0, y: 6 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.18, ease: 'easeOut' as const } },
+  }
 
-          <tbody>
+  const table = (
+    <div className="no-scrollbar overflow-x-auto">
+      <table
+        className="border-collapse text-sm"
+        style={{ tableLayout: 'fixed', width: totalWidth, minWidth: '100%' }}
+      >
+        <colgroup>
+          {columns.map(c => <col key={colId(c)} style={{ width: widths[colId(c)] }} />)}
+          {actions && <col style={{ width: widths[ACTIONS_ID] }} />}
+        </colgroup>
+
+        <thead>
+          <tr className="border-b border-notion-line bg-gradient-to-b from-notion-panel to-white text-notion-sub">
+            {columns.map(c => {
+              const id = colId(c)
+              const resizable = c.resizable ?? true
+              return (
+                <th
+                  key={id}
+                  className={cn(
+                    'relative px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider',
+                    alignClass(c.align), c.headerClassName,
+                  )}
+                >
+                  <span className="block truncate">{c.header}</span>
+                  {resizable && (
+                    <span
+                      onPointerDown={e => startResize(e, id, c.minWidth ?? DEFAULT_MIN)}
+                      className="absolute right-0 top-0 h-full w-1 cursor-col-resize select-none transition-colors hover:bg-notion-blue/40"
+                    />
+                  )}
+                </th>
+              )
+            })}
+            {actions && (
+              <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider">{actionsHeader}</th>
+            )}
+          </tr>
+        </thead>
+
+        {rows.length > 0 && (
+          <motion.tbody key={bodyKey} variants={containerVariants} initial="hidden" animate="show">
             {rows.map((row, i) => (
-              <tr
+              <motion.tr
                 key={rowKey(row)}
+                variants={rowVariants}
+                whileHover={reduce ? undefined : { y: -1 }}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 className={cn(
-                  'border-b border-notion-line last:border-0 transition-colors hover:bg-notion-hover/40',
+                  'group relative transform-gpu border-b border-notion-line/70 transition-colors last:border-0',
+                  'even:bg-notion-panel/40',
+                  'hover:bg-blue-50/50 hover:shadow-[inset_2px_0_0_0_#2383e2,0_6px_16px_-8px_rgba(35,131,226,0.35)]',
                   onRowClick && 'cursor-pointer',
                 )}
               >
@@ -183,7 +218,7 @@ export function DataTable<T>({
                   return (
                     <td
                       key={colId(c)}
-                      className={cn('px-3 py-1.5 align-middle', alignClass(c.align), c.cellClassName)}
+                      className={cn('px-4 py-2.5 align-middle text-notion-text', alignClass(c.align), c.cellClassName)}
                     >
                       {truncate
                         ? <TruncatedCell tooltip={c.tooltip?.(row)}>{content}</TruncatedCell>
@@ -192,47 +227,76 @@ export function DataTable<T>({
                   )
                 })}
                 {actions && (
-                  <td className="whitespace-nowrap px-3 py-1.5" onClick={e => e.stopPropagation()}>
-                    {actions(row)}
+                  <td className="whitespace-nowrap px-4 py-2.5" onClick={e => e.stopPropagation()}>
+                    {/* Visible by default; on hover-capable (pointer) devices it
+                        hides at rest and fades in on row hover. Always visible on touch. */}
+                    <div className="flex items-center transition-opacity duration-200 [@media(hover:hover)]:opacity-0 group-hover:[@media(hover:hover)]:opacity-100 [&:has([aria-expanded=true])]:opacity-100">
+                      {actions(row)}
+                    </div>
                   </td>
                 )}
-              </tr>
+              </motion.tr>
             ))}
+          </motion.tbody>
+        )}
 
-            {!loading && rows.length === 0 && (
-              <tr><td colSpan={totalColumns} className="py-12 text-center text-notion-faint">{emptyMessage}</td></tr>
-            )}
-            {loading && (
-              <tr><td colSpan={totalColumns} className="py-12 text-center text-notion-faint">Loading…</td></tr>
-            )}
+        {rows.length === 0 && (
+          <tbody>
+            <tr>
+              <td colSpan={totalColumns} className="py-16 text-center text-sm text-notion-faint">
+                {loading ? 'Loading…' : emptyMessage}
+              </td>
+            </tr>
           </tbody>
-        </table>
-      </div>
+        )}
+      </table>
+    </div>
+  )
 
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-notion-line px-3 py-3">
-          <p className="text-xs text-notion-sub">
-            Showing {(pagination.page - 1) * pagination.limit + 1}–
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
-          </p>
-          <div className="flex gap-1.5">
-            <Button
-              variant="secondary" size="sm"
-              disabled={pagination.page === 1}
-              onClick={() => pagination.onPageChange(pagination.page - 1)}
-            >
-              ← Prev
-            </Button>
-            <Button
-              variant="secondary" size="sm"
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => pagination.onPageChange(pagination.page + 1)}
-            >
-              Next →
-            </Button>
-          </div>
-        </div>
-      )}
+  const footer = pagination && pagination.totalPages > 1 && (
+    <div className="flex flex-col gap-3 border-t border-notion-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs text-notion-sub">
+        Showing {(pagination.page - 1) * pagination.limit + 1}–
+        {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+      </p>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="secondary" size="sm"
+          disabled={pagination.page === 1}
+          onClick={() => pagination.onPageChange(pagination.page - 1)}
+        >
+          <ChevronLeftIcon className="h-4 w-4" /> Prev
+        </Button>
+        <span className="px-1 text-xs font-medium text-notion-sub">
+          Page {pagination.page} of {pagination.totalPages}
+        </span>
+        <Button
+          variant="secondary" size="sm"
+          disabled={pagination.page >= pagination.totalPages}
+          onClick={() => pagination.onPageChange(pagination.page + 1)}
+        >
+          Next <ChevronRightIcon className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  )
+
+  // Embedded mode: no gradient/glass chrome — sits inside a parent card.
+  if (!frame) {
+    return (
+      <div className={cn('overflow-hidden', className)}>
+        {table}
+        {footer}
+      </div>
+    )
+  }
+
+  return (
+    <div className={cn('rounded-2xl bg-gradient-to-br from-notion-panel via-white to-blue-50/30 p-2 sm:p-3', className)}>
+      <div className="overflow-hidden rounded-2xl border border-white/60 bg-white/70 shadow-soft backdrop-blur-xl">
+        {table}
+        {footer}
+      </div>
     </div>
   )
 }

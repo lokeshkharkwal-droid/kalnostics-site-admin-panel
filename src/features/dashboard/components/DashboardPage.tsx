@@ -108,7 +108,7 @@ export function DashboardPage() {
               </div>
 
               <DataTable
-                className="rounded-none border-0"
+                frame={false}
                 rows={tenants}
                 rowKey={t => t.id}
                 loading={isLoading}
