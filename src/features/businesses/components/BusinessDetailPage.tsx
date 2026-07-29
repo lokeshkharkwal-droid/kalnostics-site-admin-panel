@@ -48,11 +48,15 @@ export function BusinessDetailPage() {
 
   const updateMutation = useMutation({
     mutationFn: (body: Record<string, unknown>) => updateTenant(id, body),
-    onSuccess: (updated: TenantDetail) => {
-      qc.setQueryData(['siteadmin', 'tenant', id], updated)
+    onSuccess: () => {
+      // Invalidate (don't setQueryData) the detail: the PATCH response omits the
+      // populated country/state/city/area relations, so re-fetch via getTenant to
+      // keep the Location label correct on revisit / View.
+      qc.invalidateQueries({ queryKey: ['siteadmin', 'tenant', id] })
       qc.invalidateQueries({ queryKey: ['siteadmin', 'tenants'] })
       setEditing(false)
       setSaveError('')
+      router.push('/businesses')
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.error?.message ?? err?.response?.data?.message ?? 'Failed to save changes'
@@ -101,6 +105,8 @@ export function BusinessDetailPage() {
     setEditing(false)
     setForm(null)
     setSaveError('')
+    // Discard unsaved edits and refetch so the detail shows the latest saved data.
+    qc.invalidateQueries({ queryKey: ['siteadmin', 'tenant', id] })
   }
 
   function handleSave(e: React.FormEvent) {

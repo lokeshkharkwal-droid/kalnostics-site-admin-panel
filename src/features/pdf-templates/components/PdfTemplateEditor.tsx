@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { AdminHeader } from '@/widgets/AdminHeader'
-import { Button, Card, CardContent, Input, PageLoader, SelectField, TextArea } from '@/shared/ui'
+import { Button, Card, CardContent, Input, PageLoader, PdfPreviewOverlay, SelectField, TextArea } from '@/shared/ui'
 import { cn } from '@/shared/utils'
 import type { EditorTab, PdfTemplateForm, TemplateMeta } from '../interfaces'
 import {
@@ -22,7 +22,6 @@ import {
   ORIENTATION_OPTIONS,
   PAGE_SIZE_OPTIONS,
 } from '../utils/constants'
-import { PdfPreviewOverlay } from './PdfPreviewOverlay'
 
 const TABS: { key: EditorTab; label: string }[] = [
   { key: 'general', label: 'General' },

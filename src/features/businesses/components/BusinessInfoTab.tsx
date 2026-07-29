@@ -68,13 +68,6 @@ export function BusinessInfoTab({
                 />
               </div>
 
-              <div>
-                <p className="text-xs text-notion-sub mb-1">Slug (immutable)</p>
-                <p className="text-sm text-notion-sub font-mono bg-notion-panel border border-notion-line rounded-md px-3 py-2">
-                  {tenant.slug}
-                </p>
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   label="Email"

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { cn } from '@/shared/utils'
 import { Badge } from './badge'
@@ -105,6 +106,11 @@ export function PaginatedSelect(props: PaginatedSelectProps) {
   const [search, setSearch] = useState('')
   const [debounced, setDebounced] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  // Viewport-relative position of the dropdown panel. The panel is portaled to
+  // <body> and positioned `fixed` so it escapes any ancestor's overflow/scroll
+  // clipping (e.g. inside a modal). Recomputed on open and on scroll/resize.
+  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null)
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search.trim()), 300)
@@ -112,8 +118,26 @@ export function PaginatedSelect(props: PaginatedSelectProps) {
   }, [search])
 
   useEffect(() => {
+    if (!open) return
+    const reposition = () => {
+      const r = rootRef.current?.getBoundingClientRect()
+      if (r) setRect({ top: r.bottom, left: r.left, width: r.width })
+    }
+    reposition()
+    window.addEventListener('scroll', reposition, true)
+    window.addEventListener('resize', reposition)
+    return () => {
+      window.removeEventListener('scroll', reposition, true)
+      window.removeEventListener('resize', reposition)
+    }
+  }, [open])
+
+  useEffect(() => {
     function handle(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      const insideTrigger = rootRef.current?.contains(target)
+      const insideMenu = menuRef.current?.contains(target)
+      if (!insideTrigger && !insideMenu) {
         setOpen(false)
         setSearch('')
       }
@@ -192,8 +216,12 @@ export function PaginatedSelect(props: PaginatedSelectProps) {
         </div>
       </button>
 
-      {open && (
-        <div className="absolute left-0 right-0 top-full z-[70] mt-1 min-w-[180px] rounded-md border border-notion-line2 bg-white shadow-lg">
+      {open && rect && createPortal(
+        <div
+          ref={menuRef}
+          style={{ position: 'fixed', top: rect.top + 4, left: rect.left, width: rect.width }}
+          className="z-[80] min-w-[180px] rounded-md border border-notion-line2 bg-white shadow-lg"
+        >
           {searchable && (
             <div className="flex items-center gap-1.5 border-b border-notion-line px-2.5 py-1.5">
               <SearchSm />
@@ -240,7 +268,8 @@ export function PaginatedSelect(props: PaginatedSelectProps) {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {multiple && multiValue.length > 0 && (

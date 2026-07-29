@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AdminHeader } from '@/widgets/AdminHeader'
-import { Button, Card, CardContent, Input, Modal, PageLoader } from '@/shared/ui'
+import { Button, Card, CardContent, Input, Modal, PageLoader, PdfPreviewOverlay } from '@/shared/ui'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, SearchIcon } from '@/shared/ui/icons'
 import { useDebouncedValue } from '@/shared/hooks'
 import type { StatusFilter } from '../interfaces'
@@ -16,7 +16,6 @@ import {
   updateTemplate,
 } from '../services/pdf-templates.api'
 import { PdfTemplatesGrid } from './PdfTemplatesGrid'
-import { PdfPreviewOverlay } from './PdfPreviewOverlay'
 
 const LIMIT = 20
 const QK = ['siteadmin', 'pdf-templates'] as const
