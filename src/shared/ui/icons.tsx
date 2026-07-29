@@ -36,3 +36,6 @@ export const ChevronRightIcon = ({ className }: IconProps) => (
 export const CloseIcon = ({ className }: IconProps) => (
   <svg {...base(className)}><path d="M6 18L18 6M6 6l12 12" /></svg>
 )
+export const CopyIcon = ({ className }: IconProps) => (
+  <svg {...base(className)}><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
+)

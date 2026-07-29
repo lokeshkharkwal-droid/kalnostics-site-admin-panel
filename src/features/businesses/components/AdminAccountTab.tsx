@@ -23,11 +23,18 @@ export function AdminAccountTab({ tenantId, tenantName }: IAdminAccountTabProps)
   const resetMutation = useMutation({
     mutationFn: () => resetTenantAdminPassword(tenantId),
     onSuccess: (data) => {
+      // Keep the modal open and swap its body to show the new credentials so the
+      // admin can copy the one-time password before closing.
       setResetCreds(data)
-      setResetConfirm(false)
       refetchAdmin()
     },
   })
+
+  function closeResetModal() {
+    setResetConfirm(false)
+    setResetCreds(null)
+    resetMutation.reset()
+  }
 
   function copyToClipboard(text: string, field: string) {
     navigator.clipboard.writeText(text).then(() => {
@@ -41,7 +48,7 @@ export function AdminAccountTab({ tenantId, tenantName }: IAdminAccountTabProps)
       <Card>
         <div className="px-5 py-4 border-b border-notion-line flex items-center justify-between">
           <SectionTitle>Business Admin Account</SectionTitle>
-          {adminAccount && !resetCreds && (
+          {adminAccount && (
             <Button
               size="sm"
               variant="secondary"
@@ -90,96 +97,90 @@ export function AdminAccountTab({ tenantId, tenantName }: IAdminAccountTabProps)
         </CardContent>
       </Card>
 
-      {/* Reset password confirm dialog */}
+      {/* Reset password dialog — confirms, then shows the new credentials inline */}
       {resetConfirm && (
         <Modal
-          title="Reset business admin password?"
+          title={resetCreds ? 'New credentials' : 'Reset business admin password?'}
           size="sm"
-          onClose={() => setResetConfirm(false)}
+          onClose={closeResetModal}
           footer={
-            <>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setResetConfirm(false)}
-                disabled={resetMutation.isPending}
-              >
-                Cancel
+            resetCreds ? (
+              <Button size="sm" onClick={closeResetModal}>
+                Done
               </Button>
-              <Button
-                size="sm"
-                loading={resetMutation.isPending}
-                onClick={() => resetMutation.mutate()}
-              >
-                Yes, Reset Password
-              </Button>
-            </>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={closeResetModal}
+                  disabled={resetMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  loading={resetMutation.isPending}
+                  onClick={() => resetMutation.mutate()}
+                >
+                  Yes, Reset Password
+                </Button>
+              </>
+            )
           }
         >
-          <p className="text-sm text-notion-sub">
-            A new temporary password will be generated for <strong>{tenantName}</strong>.
-          </p>
-          {resetMutation.isError && (
-            <p className="mt-3 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
-              {(resetMutation.error as any)?.response?.data?.message ?? 'Failed to reset password'}
-            </p>
+          {resetCreds ? (
+            <div className="space-y-4">
+              <p className="text-sm text-notion-sub">
+                Share these credentials with the business admin. The password is shown once—it cannot be retrieved again.
+              </p>
+
+              <div className="rounded-lg bg-notion-panel border border-notion-line divide-y divide-notion-line">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <p className="text-xs text-notion-sub mb-0.5">Phone (Login ID)</p>
+                    <p className="text-sm font-mono text-notion-text">{resetCreds.adminPhone}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => copyToClipboard(resetCreds.adminPhone, 'phone')}
+                  >
+                    {copiedField === 'phone' ? '✓ Copied' : 'Copy'}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <p className="text-xs text-notion-sub mb-0.5">Temporary Password</p>
+                    <p className="text-sm font-mono text-notion-text tracking-wider">{resetCreds.tempPassword}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => copyToClipboard(resetCreds.tempPassword, 'password')}
+                  >
+                    {copiedField === 'password' ? '✓ Copied' : 'Copy'}
+                  </Button>
+                </div>
+              </div>
+
+              <p className="text-xs text-notion-faint">
+                Admin must change this password after first login.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-notion-sub">
+                A new temporary password will be generated for <strong>{tenantName}</strong>.
+              </p>
+              {resetMutation.isError && (
+                <p className="mt-3 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+                  {(resetMutation.error as any)?.response?.data?.message ?? 'Failed to reset password'}
+                </p>
+              )}
+            </>
           )}
         </Modal>
-      )}
-
-      {/* New credentials card — shown once after reset */}
-      {resetCreds && (
-        <Card>
-          <div className="px-5 py-4 border-b border-notion-line">
-            <SectionTitle>New Credentials</SectionTitle>
-          </div>
-          <CardContent className="py-5 space-y-4">
-            <p className="text-sm text-notion-sub">
-              Share these credentials with the business admin. The password is shown once — it cannot be retrieved again.
-            </p>
-
-            <div className="rounded-lg bg-notion-panel border border-notion-line divide-y divide-notion-line">
-              <div className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <p className="text-xs text-notion-sub mb-0.5">Phone (Login ID)</p>
-                  <p className="text-sm font-mono text-notion-text">{resetCreds.adminPhone}</p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => copyToClipboard(resetCreds.adminPhone, 'phone')}
-                >
-                  {copiedField === 'phone' ? '✓ Copied' : 'Copy'}
-                </Button>
-              </div>
-              <div className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <p className="text-xs text-notion-sub mb-0.5">Temporary Password</p>
-                  <p className="text-sm font-mono text-notion-text tracking-wider">{resetCreds.tempPassword}</p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => copyToClipboard(resetCreds.tempPassword, 'password')}
-                >
-                  {copiedField === 'password' ? '✓ Copied' : 'Copy'}
-                </Button>
-              </div>
-            </div>
-
-            <p className="text-xs text-notion-faint">
-              Admin must change this password after first login.
-            </p>
-
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setResetCreds(null)}
-            >
-              Dismiss
-            </Button>
-          </CardContent>
-        </Card>
       )}
     </div>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/shared/utils'
@@ -59,6 +59,12 @@ const DocumentIcon = () => (
     <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" /><path d="M14 3v5h5M9 13h6M9 17h6" />
   </svg>
 )
+const LifebuoyIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.5" />
+    <path d="M5.6 5.6l3.3 3.3M15.1 15.1l3.3 3.3M18.4 5.6l-3.3 3.3M8.9 15.1l-3.3 3.3" />
+  </svg>
+)
 const ChevronIcon = ({ open }: { open: boolean }) => (
   <svg className={cn('h-3.5 w-3.5 transition-transform duration-100', open && 'rotate-90')} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 18l6-6-6-6" />
@@ -80,10 +86,20 @@ const NAV_ITEMS: NavItem[] = [
       { label: 'Sub Categories', href: '/sub-categories', minRole: 'content_admin' },
       { label: 'Lab Tests', href: '/lab-tests', minRole: 'content_admin' },
       { label: 'Test Groups', href: '/test-groups', minRole: 'content_admin' },
+      { label: 'Equipment', href: '/equipment', minRole: 'content_admin' },
     ],
   },
   { label: 'Locations',          href: '/locations',  icon: <MapPinIcon />,     minRole: 'content_admin' },
-  { label: 'PDF Templates',      href: '/pdf-templates', icon: <DocumentIcon />, minRole: 'content_admin' },
+  {
+    label: 'Templates',
+    icon: <DocumentIcon />,
+    minRole: 'content_admin',
+    children: [
+      { label: 'PDF Templates', href: '/pdf-templates', minRole: 'content_admin' },
+      { label: 'Messaging Templates', href: '/messaging-templates', minRole: 'content_admin' },
+      { label: 'Advanced PDF Templates', href: '/advance-pdf-templates', minRole: 'content_admin' },
+    ],
+  },
   { label: 'Payment Rules',      href: '/payment-rules', icon: <ReceiptIcon />, minRole: 'full_admin' },
   { label: 'Subscription Plans', href: '/plans',      icon: <CreditCardIcon />, minRole: 'super_owner' },
   {
@@ -96,6 +112,16 @@ const NAV_ITEMS: NavItem[] = [
       { label: 'Admin Users', href: '/admins', minRole: 'super_owner' },
     ],
   },
+  {
+    label: 'Support',
+    icon: <LifebuoyIcon />,
+    minRole: 'operations_admin',
+    children: [
+      { label: 'Support Information', href: '/support/support-information', minRole: 'operations_admin' },
+      { label: 'Audit', href: '/support/audit', minRole: 'operations_admin' },
+      { label: 'Contact Us', href: '/support/contact-us', minRole: 'operations_admin' },
+    ],
+  },
 ]
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
@@ -104,9 +130,19 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const { hasRole, user } = useSiteAdminAuthStore()
 
+  // Optimistic highlight: App Router client navigation is a transition, so
+  // `usePathname()` only reflects the new route once that navigation *commits*
+  // (after the target segment is loaded/compiled). That coupling is why the
+  // menu highlight lagged 1–2s behind the click. We record the just-clicked
+  // href and highlight against it immediately, then clear it once the real
+  // pathname catches up.
+  const [pendingHref, setPendingHref] = useState<string | null>(null)
+  useEffect(() => { setPendingHref(null) }, [pathname])
+  const current = pendingHref ?? pathname
+
   const canSee = (item: NavItem) => !item.minRole || hasRole(item.minRole)
   const isActive = (href?: string): boolean =>
-    !href ? false : href === '/dashboard' ? pathname === href : pathname.startsWith(href)
+    !href ? false : href === '/dashboard' ? current === href : current.startsWith(href)
 
   return (
     <aside className="flex h-full w-60 flex-col border-r border-notion-line bg-notion-sidebar">
@@ -127,8 +163,8 @@ export function AdminSidebar() {
         <ul className="space-y-px">
           {NAV_ITEMS.filter(canSee).map(item =>
             item.children
-              ? <NavGroup key={item.label} item={item} canSee={canSee} isActive={isActive} />
-              : <NavLeaf key={item.href} item={item} active={isActive(item.href)} />,
+              ? <NavGroup key={item.label} item={item} canSee={canSee} isActive={isActive} onNavigate={setPendingHref} />
+              : <NavLeaf key={item.href} item={item} active={isActive(item.href)} onNavigate={setPendingHref} />,
           )}
         </ul>
       </nav>
@@ -147,11 +183,19 @@ export function AdminSidebar() {
 // ── Nav pieces ──────────────────────────────────────────────────────────────────
 
 /** A single linkable nav row. `nested` indents it under a group header. */
-function NavLeaf({ item, active, nested }: { item: NavItem; active: boolean; nested?: boolean }) {
+function NavLeaf({
+  item, active, nested, onNavigate,
+}: {
+  item: NavItem
+  active: boolean
+  nested?: boolean
+  onNavigate?: (href: string) => void
+}) {
   return (
     <li>
       <Link
         href={item.href ?? '#'}
+        onClick={() => item.href && onNavigate?.(item.href)}
         className={cn(
           'group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors duration-100',
           nested && 'pl-9',
@@ -177,11 +221,12 @@ function NavLeaf({ item, active, nested }: { item: NavItem; active: boolean; nes
 /** A collapsible group header with indented child links. Auto-expands when one of
  *  its children is the active route. */
 function NavGroup({
-  item, canSee, isActive,
+  item, canSee, isActive, onNavigate,
 }: {
   item: NavItem
   canSee: (item: NavItem) => boolean
   isActive: (href?: string) => boolean
+  onNavigate?: (href: string) => void
 }) {
   const children = (item.children ?? []).filter(canSee)
   const hasActiveChild = children.some(c => isActive(c.href))
@@ -214,7 +259,7 @@ function NavGroup({
       </button>
       {open && (
         <ul className="mt-px space-y-px">
-          {children.map(c => <NavLeaf key={c.href} item={c} active={isActive(c.href)} nested />)}
+          {children.map(c => <NavLeaf key={c.href} item={c} active={isActive(c.href)} onNavigate={onNavigate} nested />)}
         </ul>
       )}
     </li>

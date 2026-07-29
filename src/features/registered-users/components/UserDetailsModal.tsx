@@ -116,15 +116,17 @@ export function UserDetailsModal({ userId, onClose }: IUserDetailsModalProps) {
                       )}
                     </div>
                     {m.branches.length > 0 && (
-                      <ul className="mt-2 space-y-1">
+                      <ul className="mt-2 space-y-1.5">
                         {m.branches.map((b, i) => (
                           <li
                             key={b.branchId ?? `tenant-level-${i}`}
-                            className="flex items-center gap-2 text-xs text-notion-sub"
+                            className="flex flex-wrap items-center gap-2 text-xs text-notion-sub"
                           >
-                            <span className="text-notion-text">
+                            {/* Branch name */}
+                            <span className="font-medium text-notion-text">
                               {b.branchName ?? 'Tenant-level'}
                             </span>
+                            {/* Role */}
                             <span className="text-notion-faint">·</span>
                             <span>{b.roleLabel || '—'}</span>
                             {b.moduleLabel && (
@@ -133,10 +135,15 @@ export function UserDetailsModal({ userId, onClose }: IUserDetailsModalProps) {
                                 <span>{b.moduleLabel}</span>
                               </>
                             )}
-                            {b.isDefault && <Badge variant="default">Default</Badge>}
-                            {b.branchStatus === 'INACTIVE' && (
-                              <Badge variant="default">Inactive</Badge>
-                            )}
+                            {/* Default branch + active status (always shown) */}
+                            <span className="ml-auto flex items-center gap-1.5">
+                              {b.isDefault && <Badge variant="primary">Default</Badge>}
+                              {b.branchStatus === 'ACTIVE' ? (
+                                <Badge variant="success">Active</Badge>
+                              ) : (
+                                <Badge variant="danger">Inactive</Badge>
+                              )}
+                            </span>
                           </li>
                         ))}
                       </ul>

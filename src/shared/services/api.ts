@@ -17,6 +17,19 @@ declare module 'axios' {
   }
 }
 
+/**
+ * The app's basePath (e.g. `/admin`), inlined at build time from next.config.js.
+ * `<Link>`, `router.push`, and `redirect()` prefix this automatically, but a raw
+ * `window.location` assignment does NOT — so a bare `'/login'` here would escape
+ * `/admin` and land on the Kaltros SPA at the origin root. We prefix it manually.
+ */
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
+/** Full-page redirect to the login screen, respecting the app's basePath. */
+function redirectToLogin(): void {
+  window.location.href = `${BASE_PATH}/login`
+}
+
 /** Default success snackbar copy by HTTP verb (used when no successMessage is given). */
 function defaultSuccessMessage(method?: string): string {
   switch (method?.toLowerCase()) {
@@ -118,11 +131,11 @@ api.interceptors.response.use(
     if (isAuthRedirect) {
       if (url.startsWith('/api/v1/siteadmin')) {
         localStorage.removeItem('siteadmin_token')
-        window.location.href = '/login'
+        redirectToLogin()
       } else {
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
-        window.location.href = '/login'
+        redirectToLogin()
       }
     }
 

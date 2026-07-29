@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { Badge, DataTable, type Column } from '@/shared/ui'
 import { AdminHeader } from '@/widgets/AdminHeader'
@@ -102,9 +103,9 @@ export function DashboardPage() {
             <div className="animate-fade-in-up overflow-hidden rounded-lg border border-notion-line bg-white" style={{ animationDelay: '160ms' }}>
               <div className="flex items-center justify-between border-b border-notion-line px-4 py-3">
                 <h3 className="text-sm font-semibold text-notion-text">Recent Businesses</h3>
-                <a href="/businesses" className="text-xs font-medium text-notion-blue hover:underline">
+                <Link href="/businesses" className="text-xs font-medium text-notion-blue hover:underline">
                   View all →
-                </a>
+                </Link>
               </div>
 
               <DataTable

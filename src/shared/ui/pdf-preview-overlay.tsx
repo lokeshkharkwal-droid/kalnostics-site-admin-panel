@@ -1,11 +1,14 @@
 'use client'
 
-import { Button } from '@/shared/ui'
+import { Button } from './button'
 
 /**
  * Full-screen PDF preview overlay. Renders a blob URL in an `<embed>` with a
  * Download link and a close button. The blob URL lifecycle (create / revoke) is
  * owned by the caller — this component is purely presentational.
+ *
+ * Shared across the PDF/Advance-PDF template modules so every preview looks and
+ * behaves identically.
  */
 export function PdfPreviewOverlay({
   url,
