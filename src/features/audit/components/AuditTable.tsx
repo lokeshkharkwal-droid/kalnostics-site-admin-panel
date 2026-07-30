@@ -46,8 +46,14 @@ export function AuditTable({ rows, loading, startIndex, pagination }: AuditTable
       cell: r => <span className="text-notion-sub">{formatDateTime(r.createdAt)}</span>,
     },
     {
-      header: 'Business', width: 180, tooltip: r => r.tenantName ?? '',
-      cell: r => <span className="text-notion-text">{r.tenantName || '—'}</span>,
+      header: 'Business', width: 180,
+      tooltip: r => (r.scope === 'SITEADMIN' ? 'Site Admin' : r.tenantName ?? ''),
+      cell: r =>
+        r.scope === 'SITEADMIN' ? (
+          <Badge variant="info">Site Admin</Badge>
+        ) : (
+          <span className="text-notion-text">{r.tenantName || '—'}</span>
+        ),
     },
     {
       header: 'Username', width: 190,
