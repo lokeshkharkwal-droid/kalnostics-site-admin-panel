@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { ToastContainer } from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
+import { copyToClipboard } from '@/shared/utils';
 import {
   getTemplate,
   saveDoc,
@@ -373,14 +374,14 @@ export function AdvancePdfEditor({ basePath }: AdvancePdfEditorProps) {
   };
 
   const handleCopyJson = async () => {
-    try {
-      await navigator.clipboard.writeText(jsonText);
-      setJsonCopied(true);
-      // Reset the "Copied!" affordance after a beat so the user can copy again.
-      setTimeout(() => setJsonCopied(false), 1500);
-    } catch {
+    const ok = await copyToClipboard(jsonText);
+    if (!ok) {
       toast('Could not copy — select the text manually.', 'error');
+      return;
     }
+    setJsonCopied(true);
+    // Reset the "Copied!" affordance after a beat so the user can copy again.
+    setTimeout(() => setJsonCopied(false), 1500);
   };
 
   const handleApplyJson = () => {

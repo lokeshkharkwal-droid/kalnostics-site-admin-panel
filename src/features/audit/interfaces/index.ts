@@ -26,6 +26,13 @@ export type AuditModuleValue =
   | 'PDF_REPORT_TEMPLATE'
   | 'AUTH'
   | 'SITEADMIN'
+  | 'EQUIPMENT'
+  | 'CONTACT_US'
+  | 'SUPPORT_INFO'
+  | 'AUTH_ROLE'
+  | 'TEST_GROUP'
+  | 'PAYMENT_RULE'
+  | 'LOCATION'
 
 /** Audit-log action (mirrors the backend `AuditAction` Prisma enum). */
 export type AuditActionValue =
@@ -38,12 +45,16 @@ export type AuditActionValue =
   | 'OTHER'
 
 /**
- * One audit-log row as returned by `GET /api/v1/siteadmin/audits` — the raw audit
- * fields plus SiteAdmin enrichment (`actorName`, `actorUsername`, `tenantName`).
+ * One audit-log row as returned by `GET /api/v1/siteadmin/audits` — the merged
+ * view over business (`scope: 'TENANT'`) and SiteAdmin (`scope: 'SITEADMIN'`)
+ * audit trails, plus enrichment (`actorName`, `actorUsername`, `tenantName`).
+ * For SiteAdmin rows `tenantId`/`tenantName` are null and the actor email fills
+ * `actorName`/`actorUsername`.
  */
 export interface AuditRecord {
   id: string
-  tenantId: string
+  scope: 'TENANT' | 'SITEADMIN'
+  tenantId: string | null
   branchId: string | null
   module: AuditModuleValue
   action: AuditActionValue
@@ -57,7 +68,7 @@ export interface AuditRecord {
   createdAt: string
   updatedAt: string
   deletedAt: string | null
-  // SiteAdmin enrichment
+  // Enrichment
   actorName: string | null
   actorUsername: string | null
   tenantName: string | null

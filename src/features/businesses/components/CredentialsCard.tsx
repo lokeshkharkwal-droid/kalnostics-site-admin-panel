@@ -2,14 +2,16 @@
 
 import { useState } from 'react'
 import { Button } from '@/shared/ui'
+import { copyToClipboard } from '@/shared/utils'
 import type { ICredentialsCardProps } from '../interfaces'
 
 /** One-time credentials modal shown after a business is created. */
 export function CredentialsCard({ creds, onDone }: ICredentialsCardProps) {
   const [copied, setCopied] = useState<'phone' | 'password' | null>(null)
 
-  function copyToClipboard(text: string, field: 'phone' | 'password') {
-    navigator.clipboard.writeText(text)
+  async function handleCopy(text: string, field: 'phone' | 'password') {
+    const ok = await copyToClipboard(text)
+    if (!ok) return
     setCopied(field)
     setTimeout(() => setCopied(null), 2000)
   }
@@ -40,7 +42,7 @@ export function CredentialsCard({ creds, onDone }: ICredentialsCardProps) {
               <p className="font-mono text-sm font-semibold text-notion-text">{creds.adminPhone}</p>
             </div>
             <button
-              onClick={() => copyToClipboard(creds.adminPhone, 'phone')}
+              onClick={() => void handleCopy(creds.adminPhone, 'phone')}
               className="shrink-0 text-xs text-notion-blue hover:text-notion-bluedk font-medium"
             >
               {copied === 'phone' ? '✓ Copied' : 'Copy'}
@@ -54,7 +56,7 @@ export function CredentialsCard({ creds, onDone }: ICredentialsCardProps) {
               <p className="font-mono text-base font-bold tracking-widest text-notion-text">{creds.tempPassword}</p>
             </div>
             <button
-              onClick={() => copyToClipboard(creds.tempPassword, 'password')}
+              onClick={() => void handleCopy(creds.tempPassword, 'password')}
               className="shrink-0 text-xs text-notion-blue hover:text-notion-bluedk font-medium"
             >
               {copied === 'password' ? '✓ Copied' : 'Copy'}

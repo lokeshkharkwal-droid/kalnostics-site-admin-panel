@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Card, CardContent, Button, Badge, Modal } from '@/shared/ui'
+import { copyToClipboard } from '@/shared/utils'
 import { getTenantAdmin, resetTenantAdminPassword } from '../services/businesses.api'
 import { formatBusinessDate } from '../utils'
 import type { IAdminAccountTabProps, IResetCredentials } from '../interfaces'
@@ -36,11 +37,11 @@ export function AdminAccountTab({ tenantId, tenantName }: IAdminAccountTabProps)
     resetMutation.reset()
   }
 
-  function copyToClipboard(text: string, field: string) {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedField(field)
-      setTimeout(() => setCopiedField(null), 2000)
-    })
+  async function handleCopy(text: string, field: string) {
+    const ok = await copyToClipboard(text)
+    if (!ok) return
+    setCopiedField(field)
+    setTimeout(() => setCopiedField(null), 2000)
   }
 
   return (
@@ -144,7 +145,7 @@ export function AdminAccountTab({ tenantId, tenantName }: IAdminAccountTabProps)
                   <Button
                     size="sm"
                     variant="secondary"
-                    onClick={() => copyToClipboard(resetCreds.adminPhone, 'phone')}
+                    onClick={() => void handleCopy(resetCreds.adminPhone, 'phone')}
                   >
                     {copiedField === 'phone' ? '✓ Copied' : 'Copy'}
                   </Button>
@@ -157,7 +158,7 @@ export function AdminAccountTab({ tenantId, tenantName }: IAdminAccountTabProps)
                   <Button
                     size="sm"
                     variant="secondary"
-                    onClick={() => copyToClipboard(resetCreds.tempPassword, 'password')}
+                    onClick={() => void handleCopy(resetCreds.tempPassword, 'password')}
                   >
                     {copiedField === 'password' ? '✓ Copied' : 'Copy'}
                   </Button>

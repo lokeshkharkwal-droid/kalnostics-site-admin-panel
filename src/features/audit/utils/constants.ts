@@ -25,6 +25,13 @@ export const MODULE_OPTIONS: { value: AuditModuleValue; label: string }[] = [
   { value: 'PDF_REPORT_TEMPLATE', label: 'PDF Report Template' },
   { value: 'AUTH', label: 'Auth' },
   { value: 'SITEADMIN', label: 'Site Admin' },
+  { value: 'EQUIPMENT', label: 'Equipment' },
+  { value: 'CONTACT_US', label: 'Contact Us' },
+  { value: 'SUPPORT_INFO', label: 'Support Info' },
+  { value: 'AUTH_ROLE', label: 'Role' },
+  { value: 'TEST_GROUP', label: 'Test Group' },
+  { value: 'PAYMENT_RULE', label: 'Payment Rule' },
+  { value: 'LOCATION', label: 'Location' },
 ]
 
 /** Options for the Action filter dropdown. */
