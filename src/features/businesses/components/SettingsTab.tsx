@@ -1,9 +1,10 @@
 'use client'
 
-import { Card, CardContent, Button, Input } from '@/shared/ui'
+import { Card, CardContent, Button, Input, SelectField } from '@/shared/ui'
 import type { IBusinessEditTabProps } from '../interfaces'
 import { SectionTitle } from './SectionTitle'
 import { ReadField } from './ReadField'
+import { CURRENCY_OPTIONS, TIMEZONE_OPTIONS } from '../constants/locale-options'
 
 export function SettingsTab({
   tenant, editing, form, setForm, updating, saveError, onSave, onCancel,
@@ -35,19 +36,19 @@ export function SettingsTab({
         ) : (
           form && (
             <form onSubmit={onSave} className="space-y-4 max-w-lg">
-              <Input
+              <SelectField
                 label="Timezone"
                 value={form.settings.timezone}
-                onChange={e => setForm(f => f && ({ ...f, settings: { ...f.settings, timezone: e.target.value } }))}
-                placeholder="Asia/Kolkata"
+                onChange={v => setForm(f => f && ({ ...f, settings: { ...f.settings, timezone: v } }))}
+                options={TIMEZONE_OPTIONS}
                 disabled={updating}
               />
               <div className="grid grid-cols-2 gap-3">
-                <Input
+                <SelectField
                   label="Currency"
                   value={form.settings.currency}
-                  onChange={e => setForm(f => f && ({ ...f, settings: { ...f.settings, currency: e.target.value } }))}
-                  placeholder="INR"
+                  onChange={v => setForm(f => f && ({ ...f, settings: { ...f.settings, currency: v } }))}
+                  options={CURRENCY_OPTIONS}
                   disabled={updating}
                 />
                 <Input

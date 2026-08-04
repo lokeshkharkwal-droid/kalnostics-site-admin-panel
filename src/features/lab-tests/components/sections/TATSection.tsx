@@ -74,6 +74,11 @@ export function TATSection({ data, set }: { data: LabTest; set: (f: keyof LabTes
       </div>
 
       <div className="grid grid-cols-2 gap-4">
+        <TimeField label="Processing Time From" value={data.processingTimeFrom} onChange={v => set('processingTimeFrom', v)} />
+        <TimeField label="Processing Time To" value={data.processingTimeTo} onChange={v => set('processingTimeTo', v)} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <TimeField label="Approval Time From" value={data.approvalTimeFrom} onChange={v => set('approvalTimeFrom', v)} />
         <TimeField label="Approval Time To" value={data.approvalTimeTo} onChange={v => set('approvalTimeTo', v)} />
       </div>

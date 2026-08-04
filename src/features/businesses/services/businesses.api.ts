@@ -36,8 +36,10 @@ export async function listTenants(params: ITenantListParams): Promise<ITenantLis
   return { rows, total: meta.total ?? rows.length, totalPages: meta.totalPages ?? 1 }
 }
 
-/** Create a tenant + its business-admin account. Combines country code + phone
- *  and maps the location SelectOptions down to their ids. */
+/** Create a tenant + its business-admin account. The business contact phone
+ *  keeps its country code; the admin's login mobile is the plain 10-digit
+ *  national number (mirrors the business phone) and the password is chosen by
+ *  the SiteAdmin. Maps the location SelectOptions down to their ids. */
 export async function createTenant(form: ICreateTenantForm): Promise<ICreateTenantResult> {
   const trimOrUndef = (v: string) => (v.trim() ? v.trim() : undefined)
   const payload = {
@@ -53,11 +55,14 @@ export async function createTenant(form: ICreateTenantForm): Promise<ICreateTena
     areaId: form.area?.id,
     logoUrl: trimOrUndef(form.logoUrl),
     photoUrl: trimOrUndef(form.photoUrl),
+    settings: { timezone: form.timezone, currency: form.currency },
     adminFirstName: form.adminFirstName.trim(),
     adminMiddleName: trimOrUndef(form.adminMiddleName),
     adminLastName: trimOrUndef(form.adminLastName),
-    adminPhone: form.adminPhone.trim() ? form.adminPhoneCountryCode + form.adminPhone.trim() : form.adminPhone,
+    // Login mobile mirrors the business phone's national number (no country code).
+    adminPhone: form.phone.trim(),
     adminEmail: trimOrUndef(form.adminEmail),
+    adminPassword: form.adminPassword,
   }
   const res = await api.post('/api/v1/siteadmin/tenants', payload, { successMessage: 'Business created' })
   return res.data as ICreateTenantResult
@@ -152,6 +157,16 @@ export async function resetTenantAdminPassword(id: string): Promise<IResetCreden
     `/api/v1/siteadmin/tenants/${id}/admin/reset-password`,
     undefined,
     { successMessage: 'Password reset' },
+  )
+  return res.data
+}
+
+/** Set the business-admin password to a SiteAdmin-chosen value (non-temp). */
+export async function setTenantAdminPassword(id: string, adminPassword: string): Promise<{ adminPhone: string }> {
+  const res = await api.put<{ adminPhone: string }>(
+    `/api/v1/siteadmin/tenants/${id}/admin/password`,
+    { adminPassword },
+    { successMessage: 'Password updated' },
   )
   return res.data
 }

@@ -29,8 +29,7 @@ export function CredentialsCard({ creds, onDone }: ICredentialsCardProps) {
             <h2 className="text-sm font-semibold text-notion-text">Business Created</h2>
           </div>
           <p className="text-xs text-notion-sub">
-            Share these credentials with <strong>{creds.businessName}</strong> admin.
-            The password is shown only once — copy it now.
+            Share these login credentials with the <strong>{creds.businessName}</strong> admin.
           </p>
         </div>
 
@@ -50,22 +49,18 @@ export function CredentialsCard({ creds, onDone }: ICredentialsCardProps) {
           </div>
 
           {/* Password */}
-          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="rounded-lg bg-notion-panel border border-notion-line px-4 py-3 flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs text-amber-700 mb-0.5">Temp Password</p>
-              <p className="font-mono text-base font-bold tracking-widest text-notion-text">{creds.tempPassword}</p>
+              <p className="text-xs text-notion-sub mb-0.5">Password</p>
+              <p className="font-mono text-base font-bold tracking-widest text-notion-text">{creds.password}</p>
             </div>
             <button
-              onClick={() => void handleCopy(creds.tempPassword, 'password')}
+              onClick={() => void handleCopy(creds.password, 'password')}
               className="shrink-0 text-xs text-notion-blue hover:text-notion-bluedk font-medium"
             >
               {copied === 'password' ? '✓ Copied' : 'Copy'}
             </button>
           </div>
-
-          <p className="text-xs text-notion-faint text-center">
-            Admin can change this password after first login.
-          </p>
         </div>
 
         <div className="border-t border-notion-line px-5 py-3">
