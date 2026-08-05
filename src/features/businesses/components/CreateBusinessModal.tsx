@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button, Input, Label, PaginatedSelect, PhoneInput, SelectField } from '@/shared/ui'
+import { Button, Input, Label, PaginatedSelect, PasswordInput, PhoneInput, SelectField } from '@/shared/ui'
 import {
   fetchAreaOptionsPage,
   fetchCityOptionsPage,
@@ -282,9 +282,8 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
               />
             </div>
             <div className="grid grid-cols-2 gap-3 mt-3">
-              <Input
+              <PasswordInput
                 label="Password *"
-                type="password"
                 value={form.adminPassword}
                 onChange={e => setForm(f => ({ ...f, adminPassword: e.target.value }))}
                 placeholder="Set a login password"
