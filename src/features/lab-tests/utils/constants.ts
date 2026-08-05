@@ -56,6 +56,7 @@ export const emptyTest = (): LabTest => ({
   allowPriceOverride: false, discountCap: 0,
   tatMin: 0, tatMinUnit: 'Hours', tatMax: 0, tatMaxUnit: 'Hours',
   scheduleDays: [], scheduleTimeFrom: '', scheduleTimeTo: '',
+  processingTimeFrom: '', processingTimeTo: '',
   approvalTimeFrom: '', approvalTimeTo: '',
   procTimeMin: 0, procTimeMinUnit: 'Hours', procTimeMax: 0, procTimeMaxUnit: 'Hours',
   billOnlyTest: false, isAllowDiscounts: true, outsource: false, preferredTest: false,

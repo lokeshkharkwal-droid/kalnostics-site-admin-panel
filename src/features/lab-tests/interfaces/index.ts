@@ -117,6 +117,8 @@ export interface LabTest {
   scheduleDays: string[]
   scheduleTimeFrom: string
   scheduleTimeTo: string
+  processingTimeFrom: string
+  processingTimeTo: string
   approvalTimeFrom: string
   approvalTimeTo: string
   procTimeMin: number

@@ -133,6 +133,8 @@ export interface LabTestWriteDto {
   scheduleDays?: DayOfWeek[]
   scheduleFrom?: string
   scheduleTo?: string
+  processingTimeFrom?: string
+  processingTimeTo?: string
   procTimeMinValue?: number
   procTimeMinUnit?: TatUnit
   procTimeMaxValue?: number
@@ -193,6 +195,8 @@ export interface LabTestEntity {
   scheduleDays: DayOfWeek[]
   scheduleFrom: string | null
   scheduleTo: string | null
+  processingTimeFrom: string | null
+  processingTimeTo: string | null
   procTimeMinValue: number | null
   procTimeMinUnit: TatUnit | null
   procTimeMaxValue: number | null

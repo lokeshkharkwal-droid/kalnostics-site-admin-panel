@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button, Input, Label, PaginatedSelect, PhoneInput } from '@/shared/ui'
+import { Button, Input, Label, PaginatedSelect, PhoneInput, SelectField } from '@/shared/ui'
 import {
   fetchAreaOptionsPage,
   fetchCityOptionsPage,
@@ -10,6 +10,7 @@ import {
   fetchStateOptionsPage,
 } from '@/features/locations/services/locations.api'
 import { createTenant } from '../services/businesses.api'
+import { CURRENCY_OPTIONS, TIMEZONE_OPTIONS } from '../constants/locale-options'
 import type { ICreateBusinessModalProps, ICreateTenantForm } from '../interfaces'
 
 const EMPTY_FORM: ICreateTenantForm = {
@@ -17,19 +18,31 @@ const EMPTY_FORM: ICreateTenantForm = {
   shortName: '', addressLine: '', pincode: '',
   country: null, state: null, city: null, area: null,
   logoUrl: '', photoUrl: '',
+  timezone: 'Asia/Kolkata', currency: 'INR',
   adminFirstName: '', adminMiddleName: '', adminLastName: '', adminPhoneCountryCode: '+91', adminPhone: '', adminEmail: '',
+  adminPassword: '',
+}
+
+/** Password policy (mirrors backend §5.3): min 8, ≥1 uppercase, ≥1 digit. */
+function validatePassword(pw: string): string | null {
+  if (pw.length < 8) return 'Password must be at least 8 characters long'
+  if (!/[A-Z]/.test(pw)) return 'Password must contain at least one uppercase letter'
+  if (!/[0-9]/.test(pw)) return 'Password must contain at least one number'
+  return null
 }
 
 export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModalProps) {
   const qc = useQueryClient()
   const [form, setForm] = useState<ICreateTenantForm>(EMPTY_FORM)
   const [formError, setFormError] = useState('')
+  // Once the SiteAdmin edits the login email, stop mirroring the business email.
+  const [adminEmailTouched, setAdminEmailTouched] = useState(false)
 
   const createMutation = useMutation({
     mutationFn: createTenant,
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['siteadmin', 'tenants'] })
-      onCreated({ adminPhone: data.adminPhone, tempPassword: data.tempPassword, businessName: data.tenant.name })
+      onCreated({ adminPhone: data.adminPhone, password: form.adminPassword, businessName: data.tenant.name })
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.message ?? 'Failed to create business'
@@ -45,11 +58,14 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
     if (!form.email.trim()) { setFormError('Business email is required'); return }
     if (!emailPattern.test(form.email.trim())) { setFormError('Enter a valid business email'); return }
     if (!form.phone.trim()) { setFormError('Business phone is required'); return }
+    if (!form.timezone) { setFormError('Time zone is required'); return }
+    if (!form.currency) { setFormError('Currency is required'); return }
     if (!form.adminFirstName.trim()) { setFormError('First name is required'); return }
     if (!form.adminLastName.trim()) { setFormError('Last name is required'); return }
-    if (!form.adminPhone.trim()) { setFormError('Phone is required'); return }
-    if (!form.adminEmail.trim()) { setFormError('Email is required'); return }
-    if (!emailPattern.test(form.adminEmail.trim())) { setFormError('Enter a valid email'); return }
+    if (!form.adminEmail.trim()) { setFormError('Login email is required'); return }
+    if (!emailPattern.test(form.adminEmail.trim())) { setFormError('Enter a valid login email'); return }
+    const pwError = validatePassword(form.adminPassword)
+    if (pwError) { setFormError(pwError); return }
     createMutation.mutate(form)
   }
 
@@ -87,7 +103,11 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
               label="Business email *"
               type="email"
               value={form.email}
-              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              onChange={e => {
+                const email = e.target.value
+                // Auto-fill the login email until the SiteAdmin edits it themselves.
+                setForm(f => ({ ...f, email, adminEmail: adminEmailTouched ? f.adminEmail : email }))
+              }}
               placeholder="info@clinic.com"
               disabled={createMutation.isPending}
             />
@@ -108,6 +128,22 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
             placeholder="CityDx"
             disabled={createMutation.isPending}
           />
+          <div className="grid grid-cols-2 gap-3">
+            <SelectField
+              label="Time zone *"
+              value={form.timezone}
+              onChange={v => setForm(f => ({ ...f, timezone: v }))}
+              options={TIMEZONE_OPTIONS}
+              disabled={createMutation.isPending}
+            />
+            <SelectField
+              label="Currency *"
+              value={form.currency}
+              onChange={v => setForm(f => ({ ...f, currency: v }))}
+              options={CURRENCY_OPTIONS}
+              disabled={createMutation.isPending}
+            />
+          </div>
 
           {/* Address */}
           <Input
@@ -199,7 +235,7 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
           <div className="border-t border-notion-line pt-3">
             <p className="text-xs font-semibold text-notion-sub uppercase tracking-wide mb-3">
               Business Admin Account
-              <span className="ml-2 font-normal normal-case text-notion-faint">Login credentials will be generated</span>
+              <span className="ml-2 font-normal normal-case text-notion-faint">Login email &amp; mobile mirror the business email/phone</span>
             </p>
             <div className="grid grid-cols-3 gap-3">
               <Input
@@ -225,21 +261,35 @@ export function CreateBusinessModal({ onClose, onCreated }: ICreateBusinessModal
               />
             </div>
             <div className="grid grid-cols-2 gap-3 mt-3">
-              <PhoneInput
-                label="Phone (login ID) *"
-                required
-                countryCode={form.adminPhoneCountryCode}
-                onCountryCodeChange={v => setForm(f => ({ ...f, adminPhoneCountryCode: v }))}
-                phone={form.adminPhone}
-                onPhoneChange={v => setForm(f => ({ ...f, adminPhone: v }))}
-                disabled={createMutation.isPending}
+              <Input
+                label="Mobile (login ID) *"
+                value={form.phone}
+                readOnly
+                disabled
+                placeholder="Mirrors business phone"
+                hint="Uses the business phone number (10-digit, no country code)"
               />
               <Input
-                label="Email *"
+                label="Login email *"
                 type="email"
                 value={form.adminEmail}
-                onChange={e => setForm(f => ({ ...f, adminEmail: e.target.value }))}
+                onChange={e => {
+                  setAdminEmailTouched(true)
+                  setForm(f => ({ ...f, adminEmail: e.target.value }))
+                }}
                 placeholder="dilip@clinic.com"
+                disabled={createMutation.isPending}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <Input
+                label="Password *"
+                type="password"
+                value={form.adminPassword}
+                onChange={e => setForm(f => ({ ...f, adminPassword: e.target.value }))}
+                placeholder="Set a login password"
+                hint="Min 8 characters, 1 uppercase, 1 number"
+                autoComplete="new-password"
                 disabled={createMutation.isPending}
               />
             </div>

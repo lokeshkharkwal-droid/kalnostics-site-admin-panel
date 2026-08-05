@@ -2,18 +2,29 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { Card, CardContent, Button, Badge, Modal } from '@/shared/ui'
+import { Card, CardContent, Button, Badge, Modal, Input } from '@/shared/ui'
 import { copyToClipboard } from '@/shared/utils'
-import { getTenantAdmin, resetTenantAdminPassword } from '../services/businesses.api'
+import { getTenantAdmin, resetTenantAdminPassword, setTenantAdminPassword } from '../services/businesses.api'
 import { formatBusinessDate } from '../utils'
 import type { IAdminAccountTabProps, IResetCredentials } from '../interfaces'
 import { SectionTitle } from './SectionTitle'
 import { ReadField } from './ReadField'
 
+/** Password policy (mirrors backend §5.3): min 8, ≥1 uppercase, ≥1 digit. */
+function validatePassword(pw: string): string | null {
+  if (pw.length < 8) return 'Password must be at least 8 characters long'
+  if (!/[A-Z]/.test(pw)) return 'Password must contain at least one uppercase letter'
+  if (!/[0-9]/.test(pw)) return 'Password must contain at least one number'
+  return null
+}
+
 export function AdminAccountTab({ tenantId, tenantName }: IAdminAccountTabProps) {
   const [resetCreds, setResetCreds] = useState<IResetCredentials | null>(null)
   const [resetConfirm, setResetConfirm] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [setPwOpen, setSetPwOpen] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [pwError, setPwError] = useState('')
 
   const { data: adminAccount, isLoading: adminLoading, refetch: refetchAdmin } = useQuery({
     queryKey: ['siteadmin', 'tenant-admin', tenantId],
@@ -31,10 +42,32 @@ export function AdminAccountTab({ tenantId, tenantName }: IAdminAccountTabProps)
     },
   })
 
+  const setPwMutation = useMutation({
+    mutationFn: (password: string) => setTenantAdminPassword(tenantId, password),
+    onSuccess: () => {
+      closeSetPwModal()
+      refetchAdmin()
+    },
+  })
+
   function closeResetModal() {
     setResetConfirm(false)
     setResetCreds(null)
     resetMutation.reset()
+  }
+
+  function closeSetPwModal() {
+    setSetPwOpen(false)
+    setNewPassword('')
+    setPwError('')
+    setPwMutation.reset()
+  }
+
+  function handleSetPassword() {
+    const err = validatePassword(newPassword)
+    if (err) { setPwError(err); return }
+    setPwError('')
+    setPwMutation.mutate(newPassword)
   }
 
   async function handleCopy(text: string, field: string) {
@@ -50,14 +83,24 @@ export function AdminAccountTab({ tenantId, tenantName }: IAdminAccountTabProps)
         <div className="px-5 py-4 border-b border-notion-line flex items-center justify-between">
           <SectionTitle>Business Admin Account</SectionTitle>
           {adminAccount && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setResetConfirm(true)}
-              disabled={resetMutation.isPending}
-            >
-              Reset Password
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setSetPwOpen(true)}
+                disabled={resetMutation.isPending}
+              >
+                Set Password
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setResetConfirm(true)}
+                disabled={resetMutation.isPending}
+              >
+                Reset Password
+              </Button>
+            </div>
           )}
         </div>
 
@@ -181,6 +224,56 @@ export function AdminAccountTab({ tenantId, tenantName }: IAdminAccountTabProps)
               )}
             </>
           )}
+        </Modal>
+      )}
+
+      {/* Set a chosen password (non-temp) */}
+      {setPwOpen && (
+        <Modal
+          title="Set business admin password"
+          size="sm"
+          onClose={closeSetPwModal}
+          footer={
+            <>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={closeSetPwModal}
+                disabled={setPwMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                loading={setPwMutation.isPending}
+                onClick={handleSetPassword}
+              >
+                Save Password
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            <p className="text-sm text-notion-sub">
+              Set a login password for <strong>{tenantName}</strong>’s admin. They will not be
+              required to change it on next login.
+            </p>
+            <Input
+              label="New password"
+              type="password"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="Enter a new password"
+              hint="Min 8 characters, 1 uppercase, 1 number"
+              autoComplete="new-password"
+              error={pwError || undefined}
+            />
+            {setPwMutation.isError && (
+              <p className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+                {(setPwMutation.error as any)?.response?.data?.message ?? 'Failed to set password'}
+              </p>
+            )}
+          </div>
         </Modal>
       )}
     </div>

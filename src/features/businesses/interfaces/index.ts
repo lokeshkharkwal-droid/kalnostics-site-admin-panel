@@ -18,12 +18,15 @@ export interface ICreateTenantForm {
   area: SelectOption | null
   logoUrl: string
   photoUrl: string
+  timezone: string
+  currency: string
   adminFirstName: string
   adminMiddleName: string
   adminLastName: string
   adminPhoneCountryCode: string
   adminPhone: string
   adminEmail: string
+  adminPassword: string
 }
 
 export interface IEditForm {
@@ -93,7 +96,6 @@ export interface ITenantListResult {
 export interface ICreateTenantResult {
   tenant: Tenant
   adminPhone: string
-  tempPassword: string
 }
 
 // ── Tenant branches (SiteAdmin summary) ──────────────────────────────────────
@@ -123,7 +125,8 @@ export interface ITenantBranchListResult {
 
 export interface ICreatedCredentials {
   adminPhone: string
-  tempPassword: string
+  /** The password the SiteAdmin chose while creating the business. */
+  password: string
   businessName: string
 }
 
