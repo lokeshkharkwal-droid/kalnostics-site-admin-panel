@@ -81,3 +81,18 @@ export interface ListCitiesParams extends ListStatesParams {
 export interface ListAreasParams extends ListCitiesParams {
   cityId?: string
 }
+
+/* ── India location sync ── */
+
+/** Created-vs-existing tally for one hierarchy tier. */
+export interface SyncTierResult {
+  created: number
+  existing: number
+}
+
+/** Result of importing the bundled India location master (country → state → city). */
+export interface SyncIndiaResult {
+  countries: SyncTierResult
+  states: SyncTierResult
+  cities: SyncTierResult
+}

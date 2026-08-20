@@ -13,6 +13,20 @@ import type { Area, City, Country, State } from '../interfaces'
 /** Resolve a parent id to a display label via a name map (falls back to the id). */
 type Resolve = (id: string) => string
 
+/**
+ * Normalise a location name to Title Case before persisting.
+ * Trims surrounding whitespace, collapses inner runs of whitespace, and
+ * capitalises the first letter of each word regardless of how it was typed
+ * (`uttar pradesh` / `NEW DELHI` → `Uttar Pradesh` / `New Delhi`).
+ */
+function toTitleCase(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .replace(/\b\p{L}/gu, (ch) => ch.toUpperCase())
+}
+
 /* ── Country ── */
 
 export function countryFromEntity(e: CountryEntity): Country {
@@ -20,7 +34,7 @@ export function countryFromEntity(e: CountryEntity): Country {
 }
 
 export function countryToWriteDto(c: Country): CountryWriteDto {
-  return { name: c.name.trim(), code: c.code.trim(), isActive: c.isActive }
+  return { name: toTitleCase(c.name), code: c.code.trim(), isActive: c.isActive }
 }
 
 export function validateCountry(c: Country): string | null {
@@ -43,7 +57,7 @@ export function stateFromEntity(e: StateEntity, countryName: Resolve): State {
 
 export function stateToWriteDto(s: State): StateWriteDto {
   return {
-    name: s.name.trim(),
+    name: toTitleCase(s.name),
     code: s.code.trim(),
     countryId: s.country?.id ?? '',
     isActive: s.isActive,
@@ -72,7 +86,7 @@ export function cityFromEntity(e: CityEntity, countryName: Resolve, stateName: R
 
 export function cityToWriteDto(c: City): CityWriteDto {
   return {
-    name: c.name.trim(),
+    name: toTitleCase(c.name),
     pinCode: c.pinCode.trim(),
     stateId: c.state?.id ?? '',
     countryId: c.country?.id ?? '',
@@ -109,7 +123,7 @@ export function areaFromEntity(
 
 export function areaToWriteDto(a: Area): AreaWriteDto {
   return {
-    name: a.name.trim(),
+    name: toTitleCase(a.name),
     locality: a.locality.trim(),
     cityId: a.city?.id ?? '',
     stateId: a.state?.id ?? '',
