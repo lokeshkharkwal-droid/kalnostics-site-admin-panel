@@ -19,8 +19,10 @@ import { CountryFormModal } from './CountryFormModal'
 const LIMIT = 20
 const QK = ['siteadmin', 'countries'] as const
 
-/** Countries tab — paginated table, name search, Add/View/Edit/Delete. */
-export function CountriesTab() {
+/** Countries tab — paginated table, name search, Add/View/Edit/Delete.
+ *  `syncSlot` is an optional action (the India-import button) rendered just
+ *  left of the Add button. */
+export function CountriesTab({ syncSlot }: { syncSlot?: React.ReactNode }) {
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -96,6 +98,7 @@ export function CountriesTab() {
           <button onClick={() => setSearch('')} className="text-xs text-notion-faint hover:text-notion-sub">Clear</button>
         )}
         <span className="ml-auto text-xs text-notion-faint">{total} {total === 1 ? 'country' : 'countries'}</span>
+        {syncSlot}
         <Button size="sm" onClick={() => setForm({ country: emptyCountry(), mode: 'create' })}>
           <PlusIcon className="h-3.5 w-3.5" /> Add Country
         </Button>

@@ -21,8 +21,10 @@ import { CityFormModal } from './CityFormModal'
 const LIMIT = 20
 const QK = ['siteadmin', 'cities'] as const
 
-/** Cities tab — table, name search + Country→State dependent filters. */
-export function CitiesTab() {
+/** Cities tab — table, name search + Country→State dependent filters.
+ *  `syncSlot` is an optional action (the India-import button) rendered just
+ *  left of the Add button. */
+export function CitiesTab({ syncSlot }: { syncSlot?: React.ReactNode }) {
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -132,6 +134,7 @@ export function CitiesTab() {
           <button onClick={() => { setSearch(''); setCountryFilter(null); setStateFilter(null) }} className="text-xs text-notion-faint hover:text-notion-sub">Clear filters</button>
         )}
         <span className="ml-auto text-xs text-notion-faint">{total} {total === 1 ? 'city' : 'cities'}</span>
+        {syncSlot}
         <Button size="sm" onClick={() => setForm({ city: emptyCity(), mode: 'create' })}>
           <PlusIcon className="h-3.5 w-3.5" /> Add City
         </Button>

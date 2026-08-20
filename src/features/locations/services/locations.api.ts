@@ -23,6 +23,7 @@ import type {
   ListCountriesParams,
   ListStatesParams,
   StateListResult,
+  SyncIndiaResult,
 } from '../interfaces'
 
 /** Platform-level location master (Site Admin). */
@@ -170,6 +171,23 @@ export async function updateArea(id: string, dto: Partial<AreaWriteDto>): Promis
 
 export async function deleteArea(id: string): Promise<AreaEntity> {
   const res = await api.delete<AreaEntity>(`${BASE}/areas/${id}`, { successMessage: 'Area deleted' })
+  return res.data
+}
+
+/* ════════════════════════════ India sync ════════════════════════════ */
+
+/**
+ * Import/refresh the bundled India location master (country → states/UTs →
+ * districts-as-cities). Idempotent on the backend — existing rows are reused,
+ * only missing ones are created, nothing is deleted. Skips the automatic toast
+ * so the caller can show a per-tier summary instead.
+ */
+export async function syncIndiaLocationData(): Promise<SyncIndiaResult> {
+  const res = await api.post<SyncIndiaResult>(
+    `${BASE}/sync/india`,
+    {},
+    { skipSuccessToast: true },
+  )
   return res.data
 }
 
