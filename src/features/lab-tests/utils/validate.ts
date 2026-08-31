@@ -48,5 +48,10 @@ export function validateLabTest(t: LabTest): string | null {
     if (aFrom !== null && aTo !== null && aFrom > aTo) return `Reference range${who}: Age From cannot exceed Age To`
   }
 
+  // Reference values.
+  for (const rv of t.referenceValues) {
+    if (!rv.displayRange.trim()) return 'Every reference value needs a Display of Reference Value'
+  }
+
   return null
 }

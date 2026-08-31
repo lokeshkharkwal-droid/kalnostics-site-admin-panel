@@ -191,6 +191,7 @@ export const MESSAGING_FEATURES_GROUPED: FeatureGroup[] = [
       { value: 'order_bill_as_attachment', label: 'Order Bill as Attachment' },
       { value: 'order_invoice_as_attachment', label: 'Order Invoice as Attachment' },
       { value: 'lab_report_as_attachment', label: 'Lab Report as Attachment' },
+      { value: 'console_lab_report_as_attachment', label: 'Console — Lab Report as Attachment' },
       { value: 'smart_lab_report_as_attachment', label: 'Smart Lab Report as Attachment' },
       { value: 'email_lab_report_as_attachment', label: 'Email — Lab Report as Attachment' },
       { value: 'email_lab_report_as_attachment_auto_email', label: 'Email — Lab Report as Attachment (Auto)' },
