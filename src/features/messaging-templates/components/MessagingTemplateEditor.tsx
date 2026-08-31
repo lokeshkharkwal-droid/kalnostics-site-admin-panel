@@ -152,8 +152,18 @@ export function MessagingTemplateEditor({ id }: { id: string }) {
       toast.error('Template body is required')
       return
     }
-    if (form.preference === 'WHATSAPP' && (!form.templateType || !form.templateCategory)) {
-      toast.error('WhatsApp templates require a message type and category')
+    if (form.preference === 'WHATSAPP') {
+      if (!form.templateType || !form.templateCategory) {
+        toast.error('WhatsApp templates require a media type and category')
+        return
+      }
+      if (!form.smsTemplateId.trim()) {
+        toast.error('WhatsApp templates require the approved WhatsApp Template ID')
+        return
+      }
+    }
+    if (form.preference === 'SMS' && (!form.smsTemplateId.trim() || !form.smsSenderId.trim())) {
+      toast.error('SMS templates require a DLT Template ID and Sender ID')
       return
     }
     setSaving(true)
@@ -304,12 +314,14 @@ export function MessagingTemplateEditor({ id }: { id: string }) {
           <Section title="SMS Settings">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <Input
-                label="DLT Template ID"
+                label="DLT Template ID *"
+                placeholder="DLT-registered SMS template id"
                 value={form.smsTemplateId}
                 onChange={(e) => set('smsTemplateId', e.target.value)}
               />
               <Input
-                label="Sender ID"
+                label="Sender ID *"
+                placeholder="DLT-registered sender / header"
                 value={form.smsSenderId}
                 onChange={(e) => set('smsSenderId', e.target.value)}
               />
@@ -327,9 +339,34 @@ export function MessagingTemplateEditor({ id }: { id: string }) {
         {/* WhatsApp settings */}
         {preference === 'WHATSAPP' && (
           <Section title="WhatsApp Settings">
+            {/* Provider delivery identifiers — the gateway sends these as
+                sms_template_id / sms_sender_id / sms_type for WhatsApp too, where
+                the template id is the approved WhatsApp template. Without a
+                template id the message cannot be delivered. */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Input
+                label="WhatsApp Template ID *"
+                placeholder="Approved WhatsApp (WABA) template id"
+                value={form.smsTemplateId}
+                onChange={(e) => set('smsTemplateId', e.target.value)}
+              />
+              <Input
+                label="Sender ID"
+                placeholder="Registered sender / WABA number"
+                value={form.smsSenderId}
+                onChange={(e) => set('smsSenderId', e.target.value)}
+              />
+              <SelectField
+                label="Message Class"
+                value={form.smsType}
+                options={SMS_TYPE_OPTIONS}
+                placeholder="—"
+                onChange={(v) => set('smsType', v as MessagingTemplateForm['smsType'])}
+              />
+            </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <SelectField
-                label="Message Type"
+                label="Media Type"
                 value={form.templateType}
                 options={WHATSAPP_TYPE_OPTIONS}
                 placeholder="Select…"

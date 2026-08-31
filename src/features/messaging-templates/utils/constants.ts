@@ -317,10 +317,17 @@ export function formFromEntity(t: MessagingTemplate): MessagingTemplateForm {
 
 /**
  * Build the API write DTO from the form. `preference` / `feature` / `template`
- * are always sent; optional strings are included only when non-empty. SMS
- * settings are sent only for the SMS channel, and WhatsApp settings
- * (`templateType` / `templateCategory` / `fileName`) only for the WhatsApp
- * channel — matching the backend's conditional validation.
+ * are always sent; optional strings are included only when non-empty.
+ *
+ * The provider-side delivery identifiers (`smsTemplateId` / `smsSenderId` /
+ * `smsType`) are sent for BOTH the SMS and WhatsApp channels: the Exchange
+ * gateway reuses the same `sms_template_id` / `sms_sender_id` / `sms_type`
+ * fields for a WhatsApp send, where `smsTemplateId` carries the approved
+ * WhatsApp template id (see kalnostics-new `exchange.client.ts` /
+ * `communication.service.ts#metaFromTemplate`; `share.service.ts` rejects a
+ * WhatsApp send whose template has no `smsTemplateId`). The WhatsApp-only
+ * settings (`templateType` / `templateCategory` / `fileName`) are sent only for
+ * the WhatsApp channel — matching the backend's conditional validation.
  */
 export function dtoFromForm(form: MessagingTemplateForm): MessagingTemplateWriteDto {
   const dto: MessagingTemplateWriteDto = {
@@ -344,7 +351,8 @@ export function dtoFromForm(form: MessagingTemplateForm): MessagingTemplateWrite
   const entityType = form.entityType.trim()
   if (entityType) dto.entityType = entityType
 
-  if (form.preference === 'SMS') {
+  // Provider delivery identifiers — used by SMS and WhatsApp alike.
+  if (form.preference === 'SMS' || form.preference === 'WHATSAPP') {
     const smsTemplateId = form.smsTemplateId.trim()
     if (smsTemplateId) dto.smsTemplateId = smsTemplateId
     const smsSenderId = form.smsSenderId.trim()
