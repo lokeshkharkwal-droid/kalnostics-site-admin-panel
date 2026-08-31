@@ -9,6 +9,8 @@ export { PaginatedSelect, type SelectOption, type PageResult } from './paginated
 export { ModuleMultiSelect } from './module-multi-select'
 export { Toggle } from './toggle'
 export { Modal } from './modal'
+export { Sheet } from './sheet'
+export { AutosuggestInput } from './autosuggest-input'
 export { Label, SelectField, TextArea } from './form-controls'
 export { DataTable, type Column, type TablePagination } from './data-table'
 export { ActionMenu, type ActionMenuItem } from './action-menu'
