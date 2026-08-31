@@ -39,3 +39,24 @@ export const ChevronRightIcon = ({ className }: IconProps) => (
 export const CloseIcon = ({ className }: IconProps) => (
   <svg {...base(className)}><path d="M6 18L18 6M6 6l12 12" /></svg>
 )
+export const GearIcon = ({ className }: IconProps) => (
+  <svg {...base(className)}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+  </svg>
+)
+export const ChevronUpIcon = ({ className }: IconProps) => (
+  <svg {...base(className)}><path d="M18 15l-6-6-6 6" /></svg>
+)
+export const FlaskIcon = ({ className }: IconProps) => (
+  <svg {...base(className)}><path d="M9 3h6M10 3v6l-5.5 9.5A1 1 0 005.36 20h13.28a1 1 0 00.86-1.5L14 9V3M7.5 15h9" /></svg>
+)
+export const SigmaIcon = ({ className }: IconProps) => (
+  <svg {...base(className)}><path d="M17 5H6l6 7-6 7h11" /></svg>
+)
+export const RulerIcon = ({ className }: IconProps) => (
+  <svg {...base(className)}><path d="M3 8l8-5 10 10-8 5L3 8z" /><path d="M11.5 6.5L13 8M9 9l1.5 1.5M6.5 11.5L8 13M14 4l1.5 1.5" /></svg>
+)
+export const NotesIcon = ({ className }: IconProps) => (
+  <svg {...base(className)}><path d="M7 3h10a1 1 0 011 1v16a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg>
+)

@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from 'react'
 import { cn } from '@/shared/utils'
-import { Button, Input } from '@/shared/ui'
+import { AutosuggestInput, Button, Input } from '@/shared/ui'
 import type { LabTest, ReferenceValueItem } from '../../interfaces'
 import { ABNORMAL_FLAG_OPTIONS, AGE_UNITS, GENDER_OPTIONS, METHODS, opts } from '../../utils/constants'
 import { Modal } from '../Modal'
@@ -12,6 +12,7 @@ import { ParameterNameSelect } from './ParameterNameSelect'
 
 /* ─── Reference Values Section ─── */
 export function ReferenceValuesSection({ data, setData }: { data: LabTest; setData: Dispatch<SetStateAction<LabTest>> }) {
+  const methodSuggestions = Array.from(new Set([...METHODS, ...data.results.map(r => r.method)].filter(Boolean)))
   const [formOpen, setFormOpen] = useState(false)
   const [editItem, setEditItem] = useState<ReferenceValueItem | null>(null)
   const empty = (): ReferenceValueItem => ({
@@ -64,12 +65,12 @@ export function ReferenceValuesSection({ data, setData }: { data: LabTest; setDa
           onClose={() => setFormOpen(false)}
           footer={<>
             <Button variant="secondary" onClick={() => setFormOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save Value</Button>
+            <Button onClick={handleSave} disabled={!form.displayRange.trim()}>Save Value</Button>
           </>}
         >
           <div className="grid grid-cols-2 gap-3">
             <ParameterNameSelect results={data.results} value={form.parameter} onChange={v => setForm(p => ({ ...p, parameter: v }))} />
-            <SelectField label="Method" value={form.method} onChange={v => setForm(p => ({ ...p, method: v }))} options={opts(METHODS)} placeholder="Select…" />
+            <AutosuggestInput label="Method" value={form.method} onChange={v => setForm(p => ({ ...p, method: v }))} suggestions={methodSuggestions} placeholder="Type or select a method…" />
             <SelectField label="Gender" value={form.gender} onChange={v => setForm(p => ({ ...p, gender: v }))} options={opts(GENDER_OPTIONS)} />
             <div className="grid grid-cols-2 gap-2">
               <Input label="Age From" type="number" value={form.ageFrom} onChange={e => setForm(p => ({ ...p, ageFrom: e.target.value }))} />
@@ -80,10 +81,14 @@ export function ReferenceValuesSection({ data, setData }: { data: LabTest; setDa
               <SelectField label="Unit" value={form.ageToUnit} onChange={v => setForm(p => ({ ...p, ageToUnit: v }))} options={opts(AGE_UNITS)} />
             </div>
             <div className="col-span-2">
-              <Input label="Display of Reference Range" value={form.displayRange} onChange={e => setForm(p => ({ ...p, displayRange: e.target.value }))} />
+              <Input
+                label={<>Display of Reference Value <span className="text-notion-red">*</span></>}
+                value={form.displayRange}
+                onChange={e => setForm(p => ({ ...p, displayRange: e.target.value }))}
+              />
             </div>
             <div className="col-span-2">
-              <SelectField label="Abnormal Flag Logic" value={form.abnormalFlagLogic} onChange={v => setForm(p => ({ ...p, abnormalFlagLogic: v }))} options={opts(ABNORMAL_FLAG_OPTIONS)} />
+              <AutosuggestInput label="Abnormal Flag Logic" value={form.abnormalFlagLogic} onChange={v => setForm(p => ({ ...p, abnormalFlagLogic: v }))} suggestions={ABNORMAL_FLAG_OPTIONS} placeholder="Type or select…" />
             </div>
           </div>
         </Modal>

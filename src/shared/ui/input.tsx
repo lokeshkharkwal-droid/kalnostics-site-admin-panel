@@ -2,14 +2,14 @@ import { cn } from '@/shared/utils'
 import { InputHTMLAttributes, forwardRef, useEffect, useState } from 'react'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label?: string
+  label?: React.ReactNode
   error?: string
   hint?: string
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, hint, id, type, value, onChange, onFocus, ...props }, ref) => {
-    const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
+    const inputId = id ?? (typeof label === 'string' ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
     const isNumber = type === 'number'
 
     // For numeric fields we track a local draft string so the user can:
