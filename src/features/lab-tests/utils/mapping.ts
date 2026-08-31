@@ -210,7 +210,7 @@ export function fromEntity(e: LabTestEntity): LabTest {
   const results: LabTest['results'] = (e.resultParams ?? []).map(p => ({
     id: p.id,
     groupName: p.groupName ?? '',
-    groupLayout: '1 Column',
+    groupLayout: 'Tabular Layout',
     parameterName: p.parameterName,
     parameterCode: p.parameterCode,
     method: p.method ?? '',
