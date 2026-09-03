@@ -47,6 +47,7 @@ export interface IEditForm {
     timezone: string
     currency: string
     date_format: string
+    time_format: string
     language: string
   }
 }

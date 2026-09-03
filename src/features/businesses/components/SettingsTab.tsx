@@ -4,7 +4,7 @@ import { Card, CardContent, Button, Input, SelectField } from '@/shared/ui'
 import type { IBusinessEditTabProps } from '../interfaces'
 import { SectionTitle } from './SectionTitle'
 import { ReadField } from './ReadField'
-import { CURRENCY_OPTIONS, TIMEZONE_OPTIONS } from '../constants/locale-options'
+import { CURRENCY_OPTIONS, TIMEZONE_OPTIONS, TIME_FORMAT_OPTIONS } from '../constants/locale-options'
 
 export function SettingsTab({
   tenant, editing, form, setForm, updating, saveError, onSave, onCancel,
@@ -31,6 +31,7 @@ export function SettingsTab({
             <ReadField label="Timezone" value={tenant.settings?.timezone} />
             <ReadField label="Currency" value={tenant.settings?.currency} />
             <ReadField label="Date Format" value={tenant.settings?.date_format} />
+            <ReadField label="Time Format" value={tenant.settings?.time_format} />
             <ReadField label="Language" value={tenant.settings?.language} />
           </div>
         ) : (
@@ -59,6 +60,13 @@ export function SettingsTab({
                   disabled={updating}
                 />
               </div>
+              <SelectField
+                label="Time Format"
+                value={form.settings.time_format}
+                onChange={v => setForm(f => f && ({ ...f, settings: { ...f.settings, time_format: v } }))}
+                options={TIME_FORMAT_OPTIONS}
+                disabled={updating}
+              />
               <Input
                 label="Language"
                 value={form.settings.language}
