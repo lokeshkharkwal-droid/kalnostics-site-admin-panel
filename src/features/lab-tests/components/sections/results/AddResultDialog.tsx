@@ -123,7 +123,6 @@ export function AddResultDialog({
     setCommittedKey(groupDraft.groupName)
   }
 
-  const handleSaveAll = () => commit()
   const handleSaveAndClose = () => { commit(); onClose() }
 
   const filledCount = results.filter(r => r.parameterName.trim() && r.parameterCode.trim()).length
@@ -144,7 +143,6 @@ export function AddResultDialog({
               <Button variant="secondary" size="sm" onClick={() => setSheetOpen(true)}>
                 <GearIcon className="h-3.5 w-3.5" />Customize Fields
               </Button>
-              <Button variant="secondary" size="sm" onClick={handleSaveAll}>Save All Results</Button>
               <Button size="sm" onClick={handleSaveAndClose}>Save &amp; Close</Button>
             </div>
           </div>

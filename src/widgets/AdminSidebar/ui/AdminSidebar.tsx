@@ -119,6 +119,7 @@ const NAV_ITEMS: NavItem[] = [
     children: [
       { label: 'Support Information', href: '/support/support-information', minRole: 'operations_admin' },
       { label: 'Audit', href: '/support/audit', minRole: 'operations_admin' },
+      { label: 'Adapter Logs', href: '/support/adapter-logs', minRole: 'operations_admin' },
       { label: 'Contact Us', href: '/support/contact-us', minRole: 'operations_admin' },
     ],
   },

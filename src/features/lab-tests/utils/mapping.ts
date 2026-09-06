@@ -11,8 +11,8 @@ import type {
   AbnormalFlag, AgeUnit, ContainerType, DayOfWeek, LabTestEntity,
   LabTestReferenceRangeDto, LabTestReferenceValueDto, LabTestResultParamDto,
   LabTestSampleDto, LabTestWriteDto, ParameterType, ProcessMethod,
-  ReferenceGender, RepeatIntervalUnit, ResultEntryMode, ResultRounding,
-  ResultType, SamplePriority, TatUnit,
+  ReferenceGender, RepeatIntervalUnit, ResultEntryMode, ResultGroupLayout,
+  ResultRounding, ResultType, SamplePriority, TatUnit,
 } from '@/entities/lab-test'
 
 /* ─── FE → backend enum maps ─── */
@@ -26,6 +26,7 @@ const CONTAINER: Record<string, ContainerType> = {
   'Citrate Tube (Blue)': 'STERILE_CONTAINER', 'Stool Container': 'STERILE_CONTAINER',
 }
 const RESULT_TYPE: Record<string, ResultType> = { Quantitative: 'QUANTITATIVE', Qualitative: 'QUALITATIVE', 'Semi-quantitative': 'QUANTITATIVE' }
+const GROUP_LAYOUT: Record<string, ResultGroupLayout> = { 'Tabular Layout': 'TABULAR', 'Sequential Layout': 'SEQUENTIAL' }
 const PARAM_TYPE: Record<string, ParameterType> = { Measured: 'MEASURED', Calculated: 'CALCULATED' }
 const ENTRY_MODE: Record<string, ResultEntryMode> = { Manual: 'MANUAL', Instrument: 'AUTO', Both: 'AUTO' }
 const ROUNDING: Record<string, ResultRounding> = {
@@ -49,8 +50,8 @@ function invert<T extends string>(map: Record<string, T>): Record<string, string
 const PROCESS_METHOD_R = invert(PROCESS_METHOD), SAMPLE_PRIORITY_R = invert(SAMPLE_PRIORITY),
   TAT_UNIT_R = invert(TAT_UNIT), DAY_R = invert(DAY), CONTAINER_R = invert(CONTAINER),
   RESULT_TYPE_R = invert(RESULT_TYPE), PARAM_TYPE_R = invert(PARAM_TYPE), ENTRY_MODE_R = invert(ENTRY_MODE),
-  GENDER_R = invert(GENDER), AGE_UNIT_R = invert(AGE_UNIT),
-  FLAG_R = invert(FLAG), REPEAT_UNIT_R = invert(REPEAT_UNIT)
+  ROUNDING_R = invert(ROUNDING), GENDER_R = invert(GENDER), AGE_UNIT_R = invert(AGE_UNIT),
+  GROUP_LAYOUT_R = invert(GROUP_LAYOUT), FLAG_R = invert(FLAG), REPEAT_UNIT_R = invert(REPEAT_UNIT)
 
 const numOrUndef = (s: string | number | null | undefined): number | undefined => {
   if (s === null || s === undefined || s === '') return undefined
@@ -125,6 +126,7 @@ function resultToDto(r: ResultItem, t: LabTest, sortOrder: number): LabTestResul
 
   return prune({
     groupName: trimOrUndef(r.groupName),
+    groupLayout: GROUP_LAYOUT[r.groupLayout],
     parameterName: r.parameterName,
     parameterCode: trimOrUndef(r.parameterCode) ?? slugCode(r.parameterName),
     method: trimOrUndef(r.method),
@@ -210,7 +212,7 @@ export function fromEntity(e: LabTestEntity): LabTest {
   const results: LabTest['results'] = (e.resultParams ?? []).map(p => ({
     id: p.id,
     groupName: p.groupName ?? '',
-    groupLayout: 'Tabular Layout',
+    groupLayout: p.groupLayout ? GROUP_LAYOUT_R[p.groupLayout] ?? 'Tabular Layout' : 'Tabular Layout',
     parameterName: p.parameterName,
     parameterCode: p.parameterCode,
     method: p.method ?? '',
@@ -220,7 +222,8 @@ export function fromEntity(e: LabTestEntity): LabTest {
     resultEntryMode: ENTRY_MODE_R[p.resultEntryMode] ?? 'Manual',
     calculationFormula: p.calculationFormula ?? '',
     reportingUnit: p.reportingUnit ?? '',
-    resultRounding: '2 Decimal',
+    resultRounding: p.resultRoundingType ? ROUNDING_R[p.resultRoundingType] ?? '2 Decimal' : '2 Decimal',
+    allowableUnits: p.allowableUnits ?? '',
     decimalPlaces: p.decimalPlaces,
     resultType: RESULT_TYPE_R[p.resultType] ?? 'Quantitative',
     reflexTests: (p.reflexTests ?? []).map(rt => ({ id: rt.id, name: rt.name })),

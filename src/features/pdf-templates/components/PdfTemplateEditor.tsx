@@ -22,6 +22,12 @@ import {
   ORIENTATION_OPTIONS,
   PAGE_SIZE_OPTIONS,
 } from '../utils/constants'
+import { TemplateImageUpload } from './TemplateImageUpload'
+
+/** Meta keys whose value is a plain string (everything except `images`). */
+type StringMetaKey = {
+  [K in keyof TemplateMeta]: TemplateMeta[K] extends string ? K : never
+}[keyof TemplateMeta]
 
 const TABS: { key: EditorTab; label: string }[] = [
   { key: 'general', label: 'General' },
@@ -91,9 +97,75 @@ export function PdfTemplateEditor({ id }: { id: string }) {
   )
 
   const setMeta =
-    <K extends keyof TemplateMeta>(key: K) =>
+    <K extends StringMetaKey>(key: K) =>
     (val: string) =>
-      setForm((f) => ({ ...f, meta: { ...f.meta, [key]: val } }))
+      setForm((f) => ({ ...f, meta: { ...f.meta, [key]: val } as TemplateMeta }))
+
+  /**
+   * Register an uploaded image in the template's `meta.images` registry and
+   * return its token id — the URL's last path segment (e.g. `uuid.png`), which
+   * mirrors the legacy `{{image:<id>}}` shape.
+   */
+  const registerImage = (url: string): string => {
+    const id = url.split('/').pop() || url
+    setForm((f) => ({
+      ...f,
+      meta: { ...f.meta, images: { ...(f.meta.images ?? {}), [id]: url } },
+    }))
+    return id
+  }
+
+  /** Append an `{{image:<id>}}` token to a header/body/footer HTML field. */
+  const appendToken = (
+    key: 'header_html' | 'body_html' | 'footer_html',
+    token: string,
+  ) =>
+    setForm((f) => ({
+      ...f,
+      meta: {
+        ...f.meta,
+        [key]: f.meta[key] ? `${f.meta[key]}\n${token}` : token,
+      } as TemplateMeta,
+    }))
+
+  /** Copy an image's `{{image:<id>}}` token to the clipboard. */
+  const copyToken = async (id: string) => {
+    const token = `{{image:${id}}}`
+    try {
+      await navigator.clipboard.writeText(token)
+      toast.success(`Copied ${token}`)
+    } catch {
+      toast.error('Copy failed — select and copy manually')
+    }
+  }
+
+  /** Chips for every uploaded image; click a chip to copy its token. */
+  const renderImageTokens = () => {
+    const entries = Object.entries(form.meta.images ?? {})
+    if (entries.length === 0) return null
+    return (
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-notion-sub">
+          Uploaded images — click a token to copy it, then paste into the HTML
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {entries.map(([id, url]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => copyToken(id)}
+              className="flex items-center gap-2 rounded-md border border-notion-line px-2 py-1 text-xs hover:bg-notion-hover"
+              title="Click to copy token"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt={id} className="h-6 w-6 rounded object-cover" />
+              <code>{`{{image:${id}}}`}</code>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   const invalidateList = () => qc.invalidateQueries({ queryKey: ['siteadmin', 'pdf-templates'] })
 
@@ -314,6 +386,39 @@ export function PdfTemplateEditor({ id }: { id: string }) {
                   value={form.meta.custom_css}
                   onChange={(e) => setMeta('custom_css')(e.target.value)}
                 />
+
+                {/* Watermark image — applied automatically (wins over Watermark Text). */}
+                <div className="space-y-2 border-t border-notion-line pt-4">
+                  <p className="text-sm font-medium text-notion-text">Watermark Image</p>
+                  <p className="text-xs text-notion-faint">
+                    Upload an image to use as the PDF watermark. It is applied
+                    automatically to every page (takes precedence over Watermark Text) —
+                    no HTML needed.
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <TemplateImageUpload
+                      label="Upload Watermark Image"
+                      onUploaded={(url) => setMeta('watermark_image')(url)}
+                    />
+                    {form.meta.watermark_image && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setMeta('watermark_image')('')}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  {form.meta.watermark_image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={form.meta.watermark_image}
+                      alt="watermark"
+                      className="mt-2 max-h-32 rounded border border-notion-line"
+                    />
+                  )}
+                </div>
               </div>
             )}
 
@@ -331,6 +436,17 @@ export function PdfTemplateEditor({ id }: { id: string }) {
                   Template vars like <code>{'{hospital_name}'}</code>, <code>{'{hospital_address}'}</code>,{' '}
                   <code>{'{{image:ID}}'}</code> are replaced at render time.
                 </p>
+                <div className="flex items-center gap-3 border-t border-notion-line pt-4">
+                  <TemplateImageUpload
+                    label="Add Image"
+                    onUploaded={(url) => copyToken(registerImage(url))}
+                  />
+                  <span className="text-xs text-notion-faint">
+                    Uploads an image and copies its <code>{'{{image:ID}}'}</code> token —
+                    paste it wherever you want the image in the Header HTML.
+                  </span>
+                </div>
+                {renderImageTokens()}
               </div>
             )}
 
@@ -358,6 +474,17 @@ export function PdfTemplateEditor({ id }: { id: string }) {
                     <li>Signing authority: wrap in <code>{'<signing_authority_tag>'}</code></li>
                   </ul>
                 </div>
+                <div className="flex items-center gap-3 border-t border-notion-line pt-4">
+                  <TemplateImageUpload
+                    label="Add Image"
+                    onUploaded={(url) => appendToken('body_html', `{{image:${registerImage(url)}}}`)}
+                  />
+                  <span className="text-xs text-notion-faint">
+                    Uploads an image and appends its <code>{'{{image:ID}}'}</code> token to
+                    the Body HTML above.
+                  </span>
+                </div>
+                {renderImageTokens()}
               </div>
             )}
 
@@ -374,6 +501,17 @@ export function PdfTemplateEditor({ id }: { id: string }) {
                 <p className="text-xs text-notion-faint">
                   Use <code>{'<signing_authority_tag>'}</code> for signing sections.
                 </p>
+                <div className="flex items-center gap-3 border-t border-notion-line pt-4">
+                  <TemplateImageUpload
+                    label="Add Image"
+                    onUploaded={(url) => appendToken('footer_html', `{{image:${registerImage(url)}}}`)}
+                  />
+                  <span className="text-xs text-notion-faint">
+                    Uploads an image and appends its <code>{'{{image:ID}}'}</code> token to
+                    the Footer HTML above.
+                  </span>
+                </div>
+                {renderImageTokens()}
               </div>
             )}
           </CardContent>
