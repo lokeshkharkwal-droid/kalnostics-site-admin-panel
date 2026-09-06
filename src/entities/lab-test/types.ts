@@ -19,6 +19,7 @@ export type ContainerType =
   | 'EDTA_TUBE_PURPLE_TOP' | 'PLAIN_TUBE_RED_TOP' | 'FLUORIDE_TUBE_GREY_TOP'
   | 'URINE_CONTAINER' | 'STERILE_CONTAINER'
 export type ResultType = 'QUANTITATIVE' | 'QUALITATIVE' | 'CALCULATED'
+export type ResultGroupLayout = 'TABULAR' | 'SEQUENTIAL'
 export type ParameterType = 'MEASURED' | 'CALCULATED'
 export type ResultEntryMode = 'MANUAL' | 'AUTO'
 export type ResultRounding =
@@ -64,6 +65,7 @@ export interface ReflexTestRefDto {
 
 export interface LabTestResultParamDto {
   groupName?: string
+  groupLayout?: ResultGroupLayout
   parameterName: string
   parameterCode: string
   method?: string
@@ -238,6 +240,7 @@ export interface LabTestSampleEntity {
 export interface LabTestResultParamEntity {
   id: string
   groupName: string | null
+  groupLayout?: ResultGroupLayout | null
   parameterName: string
   parameterCode: string
   method: string | null
@@ -246,6 +249,8 @@ export interface LabTestResultParamEntity {
   parameterType: ParameterType
   resultEntryMode: ResultEntryMode
   calculationFormula: string | null
+  resultRoundingType?: ResultRounding | null
+  allowableUnits?: string | null
   decimalPlaces: number
   criticalMin: string | number | null
   criticalMax: string | number | null

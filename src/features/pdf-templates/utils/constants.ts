@@ -16,6 +16,7 @@ export const DEFAULT_META: TemplateMeta = {
   margin_header: '5',
   margin_footer: '5',
   watermark_text: '',
+  watermark_image: '',
   template_version: '',
   custom_css: '',
   header_name: '',
@@ -25,6 +26,7 @@ export const DEFAULT_META: TemplateMeta = {
   associate_body_image: '',
   footer_name: '',
   footer_html: '',
+  images: {},
 }
 
 /** A blank template for the create form (default type `lab_report`, active). */
