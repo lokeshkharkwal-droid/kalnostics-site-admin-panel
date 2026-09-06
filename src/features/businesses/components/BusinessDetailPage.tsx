@@ -85,6 +85,7 @@ export function BusinessDetailPage() {
         timezone:    tenant.settings?.timezone ?? 'Asia/Kolkata',
         currency:    tenant.settings?.currency ?? 'INR',
         date_format: tenant.settings?.date_format ?? 'DD/MM/YYYY',
+        time_format: tenant.settings?.time_format ?? '12h',
         language:    tenant.settings?.language ?? 'en',
       },
     })
@@ -136,6 +137,7 @@ export function BusinessDetailPage() {
         timezone:    form.settings.timezone,
         currency:    form.settings.currency,
         date_format: form.settings.date_format,
+        time_format: form.settings.time_format,
         language:    form.settings.language,
       },
     })
