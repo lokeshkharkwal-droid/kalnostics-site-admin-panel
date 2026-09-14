@@ -7,12 +7,13 @@ import { AdminHeader } from '@/widgets/AdminHeader'
 import { Button, Input, Badge, DataTable, ActionMenu, Modal, type Column } from '@/shared/ui'
 import { useDebouncedValue } from '@/shared/hooks'
 import { STATUS_VARIANT, STATUS_LABEL, STATUS_OPTIONS } from '@/entities/tenant'
-import { listTenants, suspendTenant, reactivateTenant } from '../services/businesses.api'
+import { listTenants, suspendTenant, reactivateTenant, registerAllWithExchange } from '../services/businesses.api'
 import type { ICreatedCredentials } from '../interfaces'
 import { CreateBusinessModal } from './CreateBusinessModal'
 import { CredentialsCard } from './CredentialsCard'
 import { ConfigurationModal } from './ConfigurationModal'
 import { SettingsModal } from './SettingsModal'
+import { ExchangeModal } from './ExchangeModal'
 
 const LIMIT = 20
 
@@ -23,7 +24,7 @@ export function BusinessesPage() {
   const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [createdCreds, setCreatedCreds] = useState<ICreatedCredentials | null>(null)
-  const [modal, setModal] = useState<{ tenantId: string; kind: 'config' | 'settings' } | null>(null)
+  const [modal, setModal] = useState<{ tenantId: string; kind: 'config' | 'settings' | 'exchange' } | null>(null)
   const [confirm, setConfirm] = useState<{ id: string; name: string; action: 'suspend' | 'reactivate' } | null>(null)
   const queryClient = useQueryClient()
 
@@ -52,6 +53,11 @@ export function BusinessesPage() {
       queryClient.invalidateQueries({ queryKey: ['siteadmin', 'tenants'] })
       setConfirm(null)
     },
+  })
+
+  // Bulk-register every not-yet-registered tenant with the Exchange (idempotent).
+  const registerAllMutation = useMutation({
+    mutationFn: () => registerAllWithExchange(),
   })
 
   function handleStatusChange(val: string) {
@@ -102,9 +108,19 @@ export function BusinessesPage() {
         title="Businesses"
         subtitle={`${total} total businesses on the platform`}
         actions={
-          <Button size="sm" onClick={() => setShowCreate(true)}>
-            + New Business
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              loading={registerAllMutation.isPending}
+              onClick={() => registerAllMutation.mutate()}
+            >
+              Register all with Exchange
+            </Button>
+            <Button size="sm" onClick={() => setShowCreate(true)}>
+              + New Business
+            </Button>
+          </div>
         }
       />
 
@@ -151,6 +167,7 @@ export function BusinessesPage() {
                 { label: 'Edit', onClick: () => router.push(`/businesses/${t.id}?edit=1`) },
                 { label: 'Configuration', onClick: () => setModal({ tenantId: t.id, kind: 'config' }) },
                 { label: 'Settings', onClick: () => setModal({ tenantId: t.id, kind: 'settings' }) },
+                { label: 'Exchange', onClick: () => setModal({ tenantId: t.id, kind: 'exchange' }) },
                 t.subscriptionStatus === 'suspended'
                   ? { label: 'Reactivate', onClick: () => setConfirm({ id: t.id, name: t.name, action: 'reactivate' }) }
                   : { label: 'Suspend', variant: 'danger', onClick: () => setConfirm({ id: t.id, name: t.name, action: 'suspend' }) },
@@ -181,6 +198,13 @@ export function BusinessesPage() {
       )}
       {modal?.kind === 'settings' && (
         <SettingsModal tenantId={modal.tenantId} onClose={() => setModal(null)} />
+      )}
+      {modal?.kind === 'exchange' && (
+        <ExchangeModal
+          tenantId={modal.tenantId}
+          name={tenants.find(t => t.id === modal.tenantId)?.name ?? 'Business'}
+          onClose={() => setModal(null)}
+        />
       )}
 
       {/* Suspend / reactivate confirmation — opened from a row's Actions menu */}

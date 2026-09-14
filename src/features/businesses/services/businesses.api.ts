@@ -170,3 +170,52 @@ export async function setTenantAdminPassword(id: string, adminPassword: string):
   )
   return res.data
 }
+
+/** Outcome of registering one tenant with the Exchange server. */
+export interface IExchangeRegistration {
+  tenantId: string
+  exchangeTenantId: number | null
+  status: 'registered' | 'already_registered'
+  exchangeClientId: string | null
+}
+
+/** Aggregate outcome of the bulk Exchange registration. */
+export interface IExchangeBulkRegistration {
+  registered: number
+  failed: number
+  failures: Array<{ tenantId: string; error: string }>
+}
+
+/** Register ONE tenant as a client on the Exchange server (idempotent). */
+export async function registerTenantWithExchange(id: string): Promise<IExchangeRegistration> {
+  const res = await api.post<IExchangeRegistration>(
+    `/api/v1/siteadmin/tenants/${id}/register-exchange`,
+    undefined,
+    { successMessage: 'Registered with Exchange' },
+  )
+  return res.data
+}
+
+/** Register ALL not-yet-registered tenants with the Exchange server (idempotent). */
+export async function registerAllWithExchange(): Promise<IExchangeBulkRegistration> {
+  const res = await api.post<IExchangeBulkRegistration>(
+    '/api/v1/siteadmin/tenants/register-exchange',
+    undefined,
+    { successMessage: 'Exchange registration run complete' },
+  )
+  return res.data
+}
+
+/** Fetch a tenant's current Exchange client record (null if none). */
+export async function getTenantExchangeStatus(id: string): Promise<Record<string, unknown> | null> {
+  const res = await api.get<Record<string, unknown> | null>(
+    `/api/v1/siteadmin/tenants/${id}/exchange-status`,
+  )
+  return res.data ?? null
+}
+
+/** Fetch a tenant's Exchange usage/message counts (shape defined by the Exchange). */
+export async function getTenantExchangeUsage(id: string): Promise<unknown> {
+  const res = await api.get<unknown>(`/api/v1/siteadmin/tenants/${id}/exchange-usage`)
+  return res.data ?? null
+}
