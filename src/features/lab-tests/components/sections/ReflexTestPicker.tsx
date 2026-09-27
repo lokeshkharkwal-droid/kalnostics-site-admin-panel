@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useDebouncedValue } from '@/shared/hooks'
 import { Input } from '@/shared/ui'
 import { searchLabTestsForReflex } from '../../services/lab-tests.api'
+import { useTestService } from '../../utils/service-context'
 import { Label } from '../controls'
 import { CloseIcon } from '../icons'
 
@@ -19,12 +20,13 @@ export function ReflexTestPicker({
   onAdd: (o: { id: string; name: string }) => void
   onRemove: (id: string) => void
 }) {
+  const service = useTestService()
   const [search, setSearch] = useState('')
   const debounced = useDebouncedValue(search, 350)
 
   const { data: results = [] } = useQuery({
-    queryKey: ['siteadmin', 'lab-tests', 'reflex', debounced],
-    queryFn: () => searchLabTestsForReflex({ search: debounced, limit: 8 }),
+    queryKey: ['siteadmin', `${service}-tests`, 'reflex', debounced],
+    queryFn: () => searchLabTestsForReflex({ search: debounced, limit: 8 }, service),
     enabled: debounced.trim().length > 0,
   })
 

@@ -11,17 +11,28 @@ import { emptyTest } from '../utils/constants'
 import { fromEntity, toWriteDto } from '../utils/mapping'
 import {
   createLabTest, deleteLabTest, getLabTest, listLabTests, updateLabTest,
+  type TestService,
 } from '../services/lab-tests.api'
+import { TestServiceProvider } from '../utils/service-context'
 import { LabTestViewGrid } from './LabTestViewGrid'
 import { LabTestFormModal } from './LabTestFormModal'
 import { Modal } from './Modal'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, SearchIcon } from './icons'
 
 const LIMIT = 20
-const QK = ['siteadmin', 'lab-tests'] as const
 
-export function LabTestsPage() {
+/** Per-service page copy (title / subtitle / entity noun) and query-key scope. */
+const SERVICE_META: Record<TestService, { noun: string; title: string; subtitle: string }> = {
+  lab: { noun: 'Lab Test', title: 'Lab Tests', subtitle: 'Global lab test templates available to every business' },
+  radiology: { noun: 'Radiology Test', title: 'Radiology Tests', subtitle: 'Global radiology test templates available to every business' },
+  opd: { noun: 'OPD Test', title: 'OPD Tests', subtitle: 'Global OPD test templates available to every business' },
+}
+
+export function LabTestsPage({ service = 'lab' }: { service?: TestService }) {
   const qc = useQueryClient()
+  const meta = SERVICE_META[service]
+  // Query keys are scoped per service so the three pages never share cache entries.
+  const QK = ['siteadmin', `${service}-tests`] as const
   const [page, setPage] = useState(1)
   const [view, setView] = useState<LabTestListView>('DEFAULT')
   const [search, setSearch] = useState('')
@@ -35,7 +46,7 @@ export function LabTestsPage() {
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [...QK, { view, page, search: debouncedSearch, status }],
-    queryFn: () => listLabTests({ view, page, limit: LIMIT, search: debouncedSearch, status }),
+    queryFn: () => listLabTests({ view, page, limit: LIMIT, search: debouncedSearch, status }, service),
     placeholderData: keepPreviousData,
   })
 
@@ -48,38 +59,39 @@ export function LabTestsPage() {
 
   const saveMut = useMutation({
     mutationFn: ({ test, isCreate }: { test: LabTest; isCreate: boolean }) =>
-      isCreate ? createLabTest(toWriteDto(test)) : updateLabTest(test.id, toWriteDto(test)),
+      isCreate ? createLabTest(toWriteDto(test), service) : updateLabTest(test.id, toWriteDto(test), service),
     onSuccess: () => { invalidate(); setForm(null) },
   })
 
   const toggleMut = useMutation({
     mutationFn: async (id: string) => {
-      const full = await getLabTest(id)
-      return updateLabTest(id, { isActive: !full.isActive })
+      const full = await getLabTest(id, service)
+      return updateLabTest(id, { isActive: !full.isActive }, service)
     },
     onSuccess: invalidate,
   })
 
   const deleteMut = useMutation({
-    mutationFn: deleteLabTest,
+    mutationFn: (id: string) => deleteLabTest(id, service),
     onSuccess: () => { invalidate(); setConfirmDelete(null) },
   })
 
   const openEdit = async (id: string) => {
     try {
-      const full = await getLabTest(id)
+      const full = await getLabTest(id, service)
       setForm({ test: fromEntity(full), isCreate: false })
     } catch { /* error toast handled globally */ }
   }
 
   return (
+    <TestServiceProvider value={service}>
     <div className="flex flex-col overflow-auto">
       <AdminHeader
-        title="Lab Tests"
-        subtitle="Global lab test templates available to every business"
+        title={meta.title}
+        subtitle={meta.subtitle}
         actions={
           <Button size="sm" onClick={() => setForm({ test: emptyTest(), isCreate: true })}>
-            <PlusIcon className="h-3.5 w-3.5" /> Create Lab Test
+            <PlusIcon className="h-3.5 w-3.5" /> Create {meta.noun}
           </Button>
         }
       />
@@ -155,7 +167,7 @@ export function LabTestsPage() {
       {/* Delete confirmation */}
       {confirmDelete && (
         <Modal
-          title="Delete Lab Test?"
+          title={`Delete ${meta.noun}?`}
           size="sm"
           onClose={() => setConfirmDelete(null)}
           footer={<>
@@ -163,9 +175,10 @@ export function LabTestsPage() {
             <Button variant="danger" size="sm" loading={deleteMut.isPending} onClick={() => deleteMut.mutate(confirmDelete)}>Delete</Button>
           </>}
         >
-          <p className="text-sm text-notion-sub">This will remove the lab test template. This action can be reversed only by a developer.</p>
+          <p className="text-sm text-notion-sub">This will remove the {meta.noun.toLowerCase()} template. This action can be reversed only by a developer.</p>
         </Modal>
       )}
     </div>
+    </TestServiceProvider>
   )
 }

@@ -49,6 +49,16 @@ const FlaskIcon = () => (
     <path d="M9 3h6M10 3v6.5L5.2 18A1.5 1.5 0 006.5 20.3h11A1.5 1.5 0 0018.8 18L14 9.5V3M8 14h8" />
   </svg>
 )
+const ScanIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" /><path d="M3 12h18" />
+  </svg>
+)
+const StethoscopeIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 3v6a5 5 0 0010 0V3M4 3H2m2 0h2m4 0H8m2 0h2M9 19a5 5 0 005 5 5 5 0 005-5v-2" /><circle cx="19" cy="12" r="2.5" />
+  </svg>
+)
 const MapPinIcon = () => (
   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 21s-6-5.686-6-10a6 6 0 1112 0c0 4.314-6 10-6 10z" /><circle cx="12" cy="11" r="2.5" />
@@ -87,6 +97,22 @@ const NAV_ITEMS: NavItem[] = [
       { label: 'Lab Tests', href: '/lab-tests', minRole: 'content_admin' },
       { label: 'Test Groups', href: '/test-groups', minRole: 'content_admin' },
       { label: 'Equipment', href: '/equipment', minRole: 'content_admin' },
+    ],
+  },
+  {
+    label: 'Radiology',
+    icon: <ScanIcon />,
+    minRole: 'content_admin',
+    children: [
+      { label: 'Radiology Tests', href: '/radiology-tests', minRole: 'content_admin' },
+    ],
+  },
+  {
+    label: 'OPD',
+    icon: <StethoscopeIcon />,
+    minRole: 'content_admin',
+    children: [
+      { label: 'OPD Tests', href: '/opd-tests', minRole: 'content_admin' },
     ],
   },
   { label: 'Locations',          href: '/locations',  icon: <MapPinIcon />,     minRole: 'content_admin' },
