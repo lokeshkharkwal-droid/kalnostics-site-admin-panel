@@ -85,6 +85,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: 'Categories', href: '/categories', minRole: 'content_admin' },
       { label: 'Sub Categories', href: '/sub-categories', minRole: 'content_admin' },
       { label: 'Lab Tests', href: '/lab-tests', minRole: 'content_admin' },
+      { label: 'Radiology Tests', href: '/radiology-tests', minRole: 'content_admin' },
       { label: 'Test Groups', href: '/test-groups', minRole: 'content_admin' },
       { label: 'Equipment', href: '/equipment', minRole: 'content_admin' },
     ],
