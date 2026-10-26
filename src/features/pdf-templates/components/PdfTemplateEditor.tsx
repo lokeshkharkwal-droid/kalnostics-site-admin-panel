@@ -23,6 +23,10 @@ import {
   PAGE_SIZE_OPTIONS,
 } from '../utils/constants'
 import { TemplateImageUpload } from './TemplateImageUpload'
+import {
+  printTemplateSnippetsFor,
+  printTemplateVariablesFor,
+} from '../utils/print-template-variables'
 
 /** Meta keys whose value is a plain string (everything except `images`). */
 type StringMetaKey = {
@@ -137,6 +141,68 @@ export function PdfTemplateEditor({ id }: { id: string }) {
     } catch {
       toast.error('Copy failed — select and copy manually')
     }
+  }
+
+  /** Copy an arbitrary string (a `{tag}` or a Latte snippet) to the clipboard. */
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success(`Copied ${text.length > 40 ? text.slice(0, 40) + '…' : text}`)
+    } catch {
+      toast.error('Copy failed — select and copy manually')
+    }
+  }
+
+  /**
+   * "Available tags" helper for the current template `type` — click a chip to
+   * copy its token/snippet, then paste into the HTML. Flat types show
+   * `{tag}` chips; Latte all-report types show the verbatim `{foreach …}` /
+   * `$report->…` snippets. The classic editor is a plain textarea (no caret
+   * insertion), so copy-to-clipboard mirrors the image-token UX above.
+   */
+  const renderTagHelper = () => {
+    const variables = printTemplateVariablesFor(form.type)
+    const snippets = printTemplateSnippetsFor(form.type)
+    if ((!variables || variables.length === 0) && (!snippets || snippets.length === 0)) {
+      return null
+    }
+    return (
+      <div className="space-y-2 border-t border-notion-line pt-4">
+        <p className="text-xs font-medium text-notion-sub">
+          Available tags — click to copy, then paste into the HTML.
+        </p>
+        {variables && variables.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {variables.map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => copyText(`{${v}}`)}
+                className="rounded-md border border-notion-line px-2 py-0.5 text-xs hover:bg-notion-hover"
+                title={`Copy {${v}}`}
+              >
+                <code>{`{${v}}`}</code>
+              </button>
+            ))}
+          </div>
+        )}
+        {snippets && snippets.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {snippets.map((s) => (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() => copyText(s.snippet)}
+                className="rounded-md border border-notion-line px-2 py-0.5 text-xs hover:bg-notion-hover"
+                title={s.snippet}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   /** Chips for every uploaded image; click a chip to copy its token. */
@@ -446,6 +512,7 @@ export function PdfTemplateEditor({ id }: { id: string }) {
                     paste it wherever you want the image in the Header HTML.
                   </span>
                 </div>
+                {renderTagHelper()}
                 {renderImageTokens()}
               </div>
             )}
@@ -484,6 +551,7 @@ export function PdfTemplateEditor({ id }: { id: string }) {
                     the Body HTML above.
                   </span>
                 </div>
+                {renderTagHelper()}
                 {renderImageTokens()}
               </div>
             )}
@@ -511,6 +579,7 @@ export function PdfTemplateEditor({ id }: { id: string }) {
                     the Footer HTML above.
                   </span>
                 </div>
+                {renderTagHelper()}
                 {renderImageTokens()}
               </div>
             )}
