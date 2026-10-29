@@ -32,6 +32,11 @@ export interface TemplateMeta {
   // Footer tab
   footer_name: string
   footer_html: string
+  // Report layout
+  /** Body column layout: 'Single Column' | 'Two Column' | 'Grid'. */
+  body_layout: string
+  /** Logo placement: 'Top Left' | 'Top Center' | 'Top Right' | 'None'. */
+  logo_position: string
   /** Uploaded-image registry: `{{image:<id>}}` token id → resolved URL. */
   images: Record<string, string>
 }

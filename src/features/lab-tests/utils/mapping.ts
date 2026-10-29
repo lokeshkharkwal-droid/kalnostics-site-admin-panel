@@ -8,7 +8,7 @@
 import { emptyTest } from './constants'
 import type { LabTest, ResultItem, SampleItem } from '../interfaces'
 import type {
-  AbnormalFlag, AgeUnit, ContainerType, DayOfWeek, LabTestEntity,
+  AbnormalFlag, AgeUnit, ApprovalWorkflow, ContainerType, DayOfWeek, LabTestEntity,
   LabTestReferenceRangeDto, LabTestReferenceValueDto, LabTestResultParamDto,
   LabTestSampleDto, LabTestWriteDto, ParameterType, ProcessMethod,
   ReferenceGender, RepeatIntervalUnit, ResultEntryMode, ResultGroupLayout,
@@ -17,6 +17,10 @@ import type {
 
 /* ─── FE → backend enum maps ─── */
 const PROCESS_METHOD: Record<string, ProcessMethod> = { 'Single Step': 'SINGLE_STEP', 'Multi Step': 'MULTI_STEP' }
+const APPROVAL_WORKFLOW: Record<string, ApprovalWorkflow> = {
+  'Single Approval': 'SINGLE_APPROVAL', 'Dual Approval': 'DUAL_APPROVAL',
+  'Auto Approve': 'AUTO_APPROVE', 'Pathologist Review': 'PATHOLOGIST_REVIEW',
+}
 const SAMPLE_PRIORITY: Record<string, SamplePriority> = { Routine: 'ROUTINE', Urgent: 'URGENT', STAT: 'STAT' }
 const TAT_UNIT: Record<string, TatUnit> = { Minutes: 'MINUTES', Hours: 'HOURS', Days: 'DAYS' }
 const DAY: Record<string, DayOfWeek> = { Mon: 'MONDAY', Tue: 'TUESDAY', Wed: 'WEDNESDAY', Thu: 'THURSDAY', Fri: 'FRIDAY', Sat: 'SATURDAY', Sun: 'SUNDAY' }
@@ -51,7 +55,8 @@ const PROCESS_METHOD_R = invert(PROCESS_METHOD), SAMPLE_PRIORITY_R = invert(SAMP
   TAT_UNIT_R = invert(TAT_UNIT), DAY_R = invert(DAY), CONTAINER_R = invert(CONTAINER),
   RESULT_TYPE_R = invert(RESULT_TYPE), PARAM_TYPE_R = invert(PARAM_TYPE), ENTRY_MODE_R = invert(ENTRY_MODE),
   ROUNDING_R = invert(ROUNDING), GENDER_R = invert(GENDER), AGE_UNIT_R = invert(AGE_UNIT),
-  GROUP_LAYOUT_R = invert(GROUP_LAYOUT), FLAG_R = invert(FLAG), REPEAT_UNIT_R = invert(REPEAT_UNIT)
+  GROUP_LAYOUT_R = invert(GROUP_LAYOUT), FLAG_R = invert(FLAG), REPEAT_UNIT_R = invert(REPEAT_UNIT),
+  APPROVAL_WORKFLOW_R = invert(APPROVAL_WORKFLOW)
 
 const numOrUndef = (s: string | number | null | undefined): number | undefined => {
   if (s === null || s === undefined || s === '') return undefined
@@ -93,6 +98,7 @@ function resultToDto(r: ResultItem, t: LabTest, sortOrder: number): LabTestResul
     .filter(x => x.parameter === r.parameterName)
     .map((x): LabTestReferenceRangeDto => prune({
       method: trimOrUndef(x.method),
+      unit: trimOrUndef(x.unit),
       gender: GENDER[x.gender],
       ageFrom: numOrUndef(x.ageFrom),
       ageFromUnit: AGE_UNIT[x.ageFromUnit],
@@ -137,10 +143,13 @@ function resultToDto(r: ResultItem, t: LabTest, sortOrder: number): LabTestResul
     calculationFormula: trimOrUndef(r.calculationFormula),
     resultRoundingType: ROUNDING[r.resultRounding],
     allowableUnits: trimOrUndef(r.allowableUnits),
+    resultSuggestions: r.resultSuggestions?.length ? r.resultSuggestions : undefined,
+    defaultValue: trimOrUndef(r.defaultValue),
     decimalPlaces: r.decimalPlaces ?? undefined,
     criticalMin: numOrUndef(r.criticalValueMin),
     criticalMax: numOrUndef(r.criticalValueMax),
     reflexTests: r.reflexTests.length ? r.reflexTests.map(rt => ({ id: rt.id, name: rt.name })) : undefined,
+    overallResultGroups: r.overallResultGroups.length ? r.overallResultGroups : undefined,
     notes: trimOrUndef(r.notes),
     isNabl: r.nabl,
     isCap: r.cap,
@@ -159,6 +168,7 @@ export function toWriteDto(t: LabTest): LabTestWriteDto {
     testCode: t.testCode.trim(),
     aka: trimOrUndef(t.aka),
     processMethod: PROCESS_METHOD[t.processMethod],
+    approvalWorkflow: APPROVAL_WORKFLOW[t.approvalWorkflow],
     icdCode: trimOrUndef(t.icdCode),
     loincCode: trimOrUndef(t.loincCode),
     clinicalTags: tags.length ? tags : undefined,
@@ -188,11 +198,21 @@ export function toWriteDto(t: LabTest): LabTestWriteDto {
     procTimeMaxUnit: TAT_UNIT[t.procTimeMaxUnit],
     approvalTimeFrom: trimOrUndef(t.approvalTimeFrom),
     approvalTimeTo: trimOrUndef(t.approvalTimeTo),
+    reportingTimeFrom: trimOrUndef(t.reportingTimeFrom),
+    reportingTimeTo: trimOrUndef(t.reportingTimeTo),
+    approvalDurationMinValue: t.approvalTimeMin || undefined,
+    approvalDurationMinUnit: TAT_UNIT[t.approvalTimeMinUnit],
+    approvalDurationMaxValue: t.approvalTimeMax || undefined,
+    approvalDurationMaxUnit: TAT_UNIT[t.approvalTimeMaxUnit],
     isHideInOrderScreen: t.hideInOrderScreen,
     isPreferenceTest: t.preferredTest,
+    isOutsource: t.outsource,
+    isBillOnlyTest: t.billOnlyTest,
+    isSampleFlow: t.sampleFlow,
     isRepeatIntervalRestriction: t.repeatIntervalRestriction,
     repeatIntervalValue: t.repeatIntervalRestriction ? numOrUndef(t.intervalDuration) : undefined,
     repeatIntervalUnit: t.repeatIntervalRestriction ? REPEAT_UNIT[t.intervalUnit] : undefined,
+    isOverrideAllowed: t.repeatIntervalRestriction ? t.intervalOverrideAllowed : undefined,
     isActive: t.testStatus === 'Active',
     usefulFor: trimOrUndef(t.usefulFor),
     interpretationOfResults: trimOrUndef(t.interpretation),
@@ -224,9 +244,12 @@ export function fromEntity(e: LabTestEntity): LabTest {
     reportingUnit: p.reportingUnit ?? '',
     resultRounding: p.resultRoundingType ? ROUNDING_R[p.resultRoundingType] ?? '2 Decimal' : '2 Decimal',
     allowableUnits: p.allowableUnits ?? '',
+    resultSuggestions: p.resultSuggestions ?? [],
+    defaultValue: p.defaultValue ?? '',
     decimalPlaces: p.decimalPlaces,
     resultType: RESULT_TYPE_R[p.resultType] ?? 'Quantitative',
     reflexTests: (p.reflexTests ?? []).map(rt => ({ id: rt.id, name: rt.name })),
+    overallResultGroups: p.overallResultGroups ?? [],
     criticalValueMin: p.criticalMin != null ? String(p.criticalMin) : '',
     criticalValueMax: p.criticalMax != null ? String(p.criticalMax) : '',
     notes: p.notes ?? '',
@@ -237,6 +260,7 @@ export function fromEntity(e: LabTestEntity): LabTest {
       id: r.id,
       parameter: p.parameterName,
       method: r.method ?? '',
+      unit: r.unit ?? '',
       gender: GENDER_R[r.gender] ?? 'All',
       ageFrom: String(r.ageFrom),
       ageFromUnit: AGE_UNIT_R[r.ageFromUnit] ?? 'Years',
@@ -291,6 +315,7 @@ export function fromEntity(e: LabTestEntity): LabTest {
     testCode: e.testCode,
     aka: e.aka ?? '',
     processMethod: PROCESS_METHOD_R[e.processMethod] ?? 'Single Step',
+    approvalWorkflow: e.approvalWorkflow ? APPROVAL_WORKFLOW_R[e.approvalWorkflow] ?? '' : '',
     icdCode: e.icdCode ?? '',
     loincCode: e.loincCode ?? '',
     clinicalTags: (e.clinicalTags ?? []).join(', '),
@@ -320,11 +345,21 @@ export function fromEntity(e: LabTestEntity): LabTest {
     procTimeMaxUnit: e.procTimeMaxUnit ? TAT_UNIT_R[e.procTimeMaxUnit] ?? 'Hours' : 'Hours',
     approvalTimeFrom: e.approvalTimeFrom ?? '',
     approvalTimeTo: e.approvalTimeTo ?? '',
+    reportingTimeFrom: e.reportingTimeFrom ?? '',
+    reportingTimeTo: e.reportingTimeTo ?? '',
+    approvalTimeMin: e.approvalDurationMinValue ?? 0,
+    approvalTimeMinUnit: e.approvalDurationMinUnit ? TAT_UNIT_R[e.approvalDurationMinUnit] ?? 'Hours' : 'Hours',
+    approvalTimeMax: e.approvalDurationMaxValue ?? 0,
+    approvalTimeMaxUnit: e.approvalDurationMaxUnit ? TAT_UNIT_R[e.approvalDurationMaxUnit] ?? 'Hours' : 'Hours',
     hideInOrderScreen: e.isHideInOrderScreen,
     preferredTest: e.isPreferenceTest,
+    outsource: e.isOutsource,
+    billOnlyTest: e.isBillOnlyTest,
+    sampleFlow: e.isSampleFlow,
     repeatIntervalRestriction: e.isRepeatIntervalRestriction,
     intervalDuration: e.repeatIntervalValue != null ? String(e.repeatIntervalValue) : '',
     intervalUnit: e.repeatIntervalUnit ? REPEAT_UNIT_R[e.repeatIntervalUnit] ?? 'Hours' : 'Hours',
+    intervalOverrideAllowed: e.isOverrideAllowed,
     testStatus: e.isActive ? 'Active' : 'Inactive',
     usefulFor: e.usefulFor ?? '',
     interpretation: e.interpretationOfResults ?? '',

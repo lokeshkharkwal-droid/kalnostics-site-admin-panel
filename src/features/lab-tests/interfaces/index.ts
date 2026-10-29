@@ -3,10 +3,14 @@ import type { LabTestListRow, LabTestListView } from '@/entities/lab-test'
 /* ═══════════════════════════════════════
    Rich UI Lab Test model (string-based).
    The form edits this shape; it is mapped to/from the backend DTO/entity in
-   ../utils/mapping.ts. Fields that don't apply to a SITE_ADMIN template
-   (Department / Category / Sub Category / Mandatory Test / Report Template /
-   PDF / Image / Approval Workflow / Group & Icon Settings / Version Control)
-   are deliberately omitted from the form and from this model.
+   ../utils/mapping.ts. Only genuinely tenant-scoped fields (Department /
+   Category / Sub Category / Mandatory Test / Report Template / PDF / Image /
+   Group & Icon Settings / Lab Adapter scope / Version Control) are deliberately
+   omitted — they reference per-tenant data that doesn't exist on a SITE_ADMIN
+   global template. Non-tenant configuration (Approval Workflow, interval
+   override, approval-duration / reporting windows, result suggestions / default
+   value / overall-result groups, reference-range unit) is kept identical to the
+   Business Admin "Create Lab Test" form so imported templates carry full config.
 ═══════════════════════════════════════ */
 
 export interface SampleItem {
@@ -42,10 +46,16 @@ export interface ResultItem {
   reportingUnit: string
   resultRounding: string
   allowableUnits?: string
+  /** Suggested values shown when entering this parameter's result (one per line in the UI). */
+  resultSuggestions?: string[]
+  /** Pre-filled value for this parameter's result — one of resultSuggestions or any custom text. */
+  defaultValue?: string
   decimalPlaces: number
   resultType: string
   /** Reflex tests reference existing lab tests by id; name is for display. */
   reflexTests: { id: string; name: string }[]
+  /** Overall Result template group names this parameter is linked to (free-text). */
+  overallResultGroups: string[]
   criticalValueMin: string
   criticalValueMax: string
   notes: string
@@ -56,6 +66,7 @@ export interface ReferenceRangeItem {
   id: string
   parameter: string
   method: string
+  unit: string
   gender: string
   ageFrom: string
   ageFromUnit: string
@@ -91,6 +102,7 @@ export interface LabTest {
   testCode: string
   aka: string
   processMethod: string
+  approvalWorkflow: string
   hideInOrderScreen: boolean
   clinicalTags: string
   icdCode: string
@@ -100,6 +112,7 @@ export interface LabTest {
   repeatIntervalRestriction: boolean
   intervalDuration: string
   intervalUnit: string
+  intervalOverrideAllowed: boolean
   // Pricing
   priceMSRP: number
   priceMax: number
@@ -121,10 +134,17 @@ export interface LabTest {
   processingTimeTo: string
   approvalTimeFrom: string
   approvalTimeTo: string
+  reportingTimeFrom: string
+  reportingTimeTo: string
   procTimeMin: number
   procTimeMinUnit: string
   procTimeMax: number
   procTimeMaxUnit: string
+  // Approval duration — value + unit (maps to backend approvalDuration*Value/Unit)
+  approvalTimeMin: number
+  approvalTimeMinUnit: string
+  approvalTimeMax: number
+  approvalTimeMaxUnit: string
   // Flags
   billOnlyTest: boolean
   isAllowDiscounts: boolean

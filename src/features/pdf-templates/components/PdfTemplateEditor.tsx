@@ -16,8 +16,10 @@ import {
   updateTemplate,
 } from '../services/pdf-templates.api'
 import {
+  BODY_LAYOUT_OPTIONS,
   emptyTemplateForm,
   FONT_OPTIONS,
+  LOGO_POSITION_OPTIONS,
   mergeMeta,
   ORIENTATION_OPTIONS,
   PAGE_SIZE_OPTIONS,
@@ -378,6 +380,20 @@ export function PdfTemplateEditor({ id }: { id: string }) {
                   <Input label="Margin Footer (mm)" value={form.meta.margin_footer} onChange={(e) => setMeta('margin_footer')(e.target.value)} />
                   <Input label="Watermark Text" value={form.meta.watermark_text} onChange={(e) => setMeta('watermark_text')(e.target.value)} />
                   <Input label="Template Version" value={form.meta.template_version} onChange={(e) => setMeta('template_version')(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  <SelectField
+                    label="Body Layout"
+                    value={form.meta.body_layout}
+                    options={BODY_LAYOUT_OPTIONS}
+                    onChange={setMeta('body_layout')}
+                  />
+                  <SelectField
+                    label="Logo Position"
+                    value={form.meta.logo_position}
+                    options={LOGO_POSITION_OPTIONS}
+                    onChange={setMeta('logo_position')}
+                  />
                 </div>
                 <TextArea
                   label="Custom CSS"

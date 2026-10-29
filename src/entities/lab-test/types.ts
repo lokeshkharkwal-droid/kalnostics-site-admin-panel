@@ -29,9 +29,12 @@ export type AgeUnit = 'DAYS' | 'MONTHS' | 'YEARS'
 export type AbnormalFlag =
   | 'BOLD_AND_RED' | 'BOLD_ONLY' | 'ITALIC' | 'UNDERLINE' | 'COLOUR_HIGHLIGHT'
 export type RepeatIntervalUnit = 'HOURS' | 'DAYS' | 'MONTHS' | 'YEARS'
+export type ApprovalWorkflow =
+  | 'SINGLE_APPROVAL' | 'DUAL_APPROVAL' | 'AUTO_APPROVE' | 'PATHOLOGIST_REVIEW'
 
 export interface LabTestReferenceRangeDto {
   method?: string
+  unit?: string
   gender?: ReferenceGender
   ageFrom?: number
   ageFromUnit?: AgeUnit
@@ -76,10 +79,16 @@ export interface LabTestResultParamDto {
   calculationFormula?: string
   resultRoundingType?: ResultRounding
   allowableUnits?: string
+  /** Suggested values shown when entering this parameter's result (one per line in the UI). */
+  resultSuggestions?: string[]
+  /** Pre-filled value for this parameter's result — one of resultSuggestions or any custom text. */
+  defaultValue?: string
   decimalPlaces?: number
   criticalMin?: number
   criticalMax?: number
   reflexTests?: ReflexTestRefDto[]
+  /** Overall Result template group names this parameter is linked to (free-text). */
+  overallResultGroups?: string[]
   notes?: string
   isNabl?: boolean
   isCap?: boolean
@@ -114,6 +123,7 @@ export interface LabTestWriteDto {
   testCode: string
   aka?: string
   processMethod?: ProcessMethod
+  approvalWorkflow?: ApprovalWorkflow
   icdCode?: string
   loincCode?: string
   clinicalTags?: string[]
@@ -143,11 +153,21 @@ export interface LabTestWriteDto {
   procTimeMaxUnit?: TatUnit
   approvalTimeFrom?: string
   approvalTimeTo?: string
+  reportingTimeFrom?: string
+  reportingTimeTo?: string
+  approvalDurationMinValue?: number
+  approvalDurationMinUnit?: TatUnit
+  approvalDurationMaxValue?: number
+  approvalDurationMaxUnit?: TatUnit
   isHideInOrderScreen?: boolean
   isPreferenceTest?: boolean
+  isOutsource?: boolean
+  isBillOnlyTest?: boolean
+  isSampleFlow?: boolean
   isRepeatIntervalRestriction?: boolean
   repeatIntervalValue?: number
   repeatIntervalUnit?: RepeatIntervalUnit
+  isOverrideAllowed?: boolean
   isActive?: boolean
   usefulFor?: string
   interpretationOfResults?: string
@@ -176,6 +196,7 @@ export interface LabTestEntity {
   mandatoryCatId: string | null
   mandatorySubcatId: string | null
   processMethod: ProcessMethod
+  approvalWorkflow: ApprovalWorkflow | null
   icdCode: string | null
   loincCode: string | null
   clinicalTags: string[]
@@ -205,12 +226,22 @@ export interface LabTestEntity {
   procTimeMaxUnit: TatUnit | null
   approvalTimeFrom: string | null
   approvalTimeTo: string | null
+  reportingTimeFrom: string | null
+  reportingTimeTo: string | null
+  approvalDurationMinValue: number | null
+  approvalDurationMinUnit: TatUnit | null
+  approvalDurationMaxValue: number | null
+  approvalDurationMaxUnit: TatUnit | null
   isHideInOrderScreen: boolean
   isPreferenceTest: boolean
+  isOutsource: boolean
+  isBillOnlyTest: boolean
+  isSampleFlow: boolean
   isMandatoryTest: boolean
   isRepeatIntervalRestriction: boolean
   repeatIntervalValue: number | null
   repeatIntervalUnit: RepeatIntervalUnit | null
+  isOverrideAllowed: boolean
   isActive: boolean
   usefulFor: string | null
   interpretationOfResults: string | null
@@ -251,6 +282,9 @@ export interface LabTestResultParamEntity {
   calculationFormula: string | null
   resultRoundingType?: ResultRounding | null
   allowableUnits?: string | null
+  resultSuggestions?: string[]
+  defaultValue?: string | null
+  overallResultGroups?: string[]
   decimalPlaces: number
   criticalMin: string | number | null
   criticalMax: string | number | null
@@ -266,6 +300,7 @@ export interface LabTestResultParamEntity {
 export interface LabTestReferenceRangeEntity {
   id: string
   method: string | null
+  unit?: string | null
   gender: ReferenceGender
   ageFrom: number
   ageFromUnit: AgeUnit

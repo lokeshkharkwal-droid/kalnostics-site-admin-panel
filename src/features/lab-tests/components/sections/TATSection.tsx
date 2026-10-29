@@ -82,6 +82,28 @@ export function TATSection({ data, set }: { data: LabTest; set: (f: keyof LabTes
         <TimeField label="Approval Time From" value={data.approvalTimeFrom} onChange={v => set('approvalTimeFrom', v)} />
         <TimeField label="Approval Time To" value={data.approvalTimeTo} onChange={v => set('approvalTimeTo', v)} />
       </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Approval Time Minimum</Label>
+          <div className="mt-1 flex gap-2">
+            <Input type="number" value={data.approvalTimeMin} onChange={e => set('approvalTimeMin', +e.target.value)} />
+            <SelectField className="w-32" value={data.approvalTimeMinUnit} onChange={v => set('approvalTimeMinUnit', v)} options={opts(TAT_UNITS)} />
+          </div>
+        </div>
+        <div>
+          <Label>Approval Time Maximum</Label>
+          <div className="mt-1 flex gap-2">
+            <Input type="number" value={data.approvalTimeMax} onChange={e => set('approvalTimeMax', +e.target.value)} />
+            <SelectField className="w-32" value={data.approvalTimeMaxUnit} onChange={v => set('approvalTimeMaxUnit', v)} options={opts(TAT_UNITS)} />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <TimeField label="Reporting Time From" value={data.reportingTimeFrom} onChange={v => set('reportingTimeFrom', v)} />
+        <TimeField label="Reporting Time To" value={data.reportingTimeTo} onChange={v => set('reportingTimeTo', v)} />
+      </div>
     </div>
   )
 }

@@ -26,6 +26,8 @@ export const DEFAULT_META: TemplateMeta = {
   associate_body_image: '',
   footer_name: '',
   footer_html: '',
+  body_layout: 'Single Column',
+  logo_position: 'Top Left',
   images: {},
 }
 
@@ -124,4 +126,19 @@ export const FONT_OPTIONS = [
 export const STATUS_SELECT_OPTIONS = [
   { value: '1', label: 'Active' },
   { value: '0', label: 'Inactive' },
+]
+
+/** Body column layout options (mirror backend PDF_BODY_LAYOUTS). */
+export const BODY_LAYOUT_OPTIONS = [
+  { value: 'Single Column', label: 'Single Column' },
+  { value: 'Two Column', label: 'Two Column' },
+  { value: 'Grid', label: 'Grid' },
+]
+
+/** Logo placement options (mirror backend PDF_LOGO_POSITIONS). */
+export const LOGO_POSITION_OPTIONS = [
+  { value: 'Top Left', label: 'Top Left' },
+  { value: 'Top Center', label: 'Top Center' },
+  { value: 'Top Right', label: 'Top Right' },
+  { value: 'None', label: 'None' },
 ]

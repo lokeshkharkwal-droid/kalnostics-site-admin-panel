@@ -25,6 +25,7 @@ export const AGE_UNITS = ['Days', 'Months', 'Years']
 export const TAT_UNITS = ['Minutes', 'Hours', 'Days']
 export const INTERVAL_UNITS = ['Hours', 'Days', 'Months', 'Years']
 export const PROCESS_METHODS = ['Single Step', 'Multi Step']
+export const APPROVAL_WORKFLOWS = ['Single Approval', 'Dual Approval', 'Auto Approve', 'Pathologist Review']
 export const SAMPLE_PRIORITIES = ['Routine', 'STAT', 'Urgent']
 export const STATUS_OPTIONS = ['Active', 'Inactive']
 export const SCHEDULE_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -47,18 +48,20 @@ export const TEST_SECTIONS = [
 export const emptyTest = (): LabTest => ({
   id: `T-${Date.now()}`,
   testName: '', testDisplay: '', testCode: '', aka: '',
-  processMethod: 'Single Step',
+  processMethod: 'Single Step', approvalWorkflow: '',
   hideInOrderScreen: false,
   clinicalTags: '', icdCode: '', loincCode: '',
   samplePriorityType: 'Routine', enable: true,
-  repeatIntervalRestriction: false, intervalDuration: '', intervalUnit: 'Hours',
+  repeatIntervalRestriction: false, intervalDuration: '', intervalUnit: 'Hours', intervalOverrideAllowed: false,
   priceMSRP: 0, priceMax: 0, priceMin: 0, priceOriginal: 0, franchisePrice: 0, emergencyPrice: 0,
   allowPriceOverride: false, discountCap: 0,
   tatMin: 0, tatMinUnit: 'Hours', tatMax: 0, tatMaxUnit: 'Hours',
   scheduleDays: [], scheduleTimeFrom: '', scheduleTimeTo: '',
   processingTimeFrom: '', processingTimeTo: '',
   approvalTimeFrom: '', approvalTimeTo: '',
+  reportingTimeFrom: '', reportingTimeTo: '',
   procTimeMin: 0, procTimeMinUnit: 'Hours', procTimeMax: 0, procTimeMaxUnit: 'Hours',
+  approvalTimeMin: 0, approvalTimeMinUnit: 'Hours', approvalTimeMax: 0, approvalTimeMaxUnit: 'Hours',
   billOnlyTest: false, isAllowDiscounts: true, outsource: false, preferredTest: false,
   sampleFlow: false, testStatus: 'Active',
   samples: [], results: [], referenceRanges: [], referenceValues: [],
