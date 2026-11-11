@@ -89,6 +89,19 @@ const NAV_ITEMS: NavItem[] = [
       { label: 'Equipment', href: '/equipment', minRole: 'content_admin' },
     ],
   },
+  {
+    label: 'Inventory',
+    icon: <BuildingIcon />,
+    minRole: 'content_admin',
+    children: [
+      { label: 'Master Products', href: '/inventory-master-products', minRole: 'content_admin' },
+      { label: 'Categories', href: '/inventory-categories', minRole: 'content_admin' },
+      { label: 'Sub-categories', href: '/inventory-sub-categories', minRole: 'content_admin' },
+      { label: 'Units', href: '/inventory-units', minRole: 'content_admin' },
+      { label: 'Brands', href: '/inventory-brands', minRole: 'content_admin' },
+      { label: 'Tax Rates', href: '/inventory-tax-rates', minRole: 'content_admin' },
+    ],
+  },
   { label: 'Locations',          href: '/locations',  icon: <MapPinIcon />,     minRole: 'content_admin' },
   {
     label: 'Templates',
