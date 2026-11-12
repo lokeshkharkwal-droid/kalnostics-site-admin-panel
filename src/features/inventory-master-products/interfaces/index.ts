@@ -44,12 +44,14 @@ export interface IMasterProductSupplier {
   price: number | null
 }
 
-/** A combo child line (for `type === 'combo'`). Read-only here; preserved on save. */
+/** A combo child line (for `type === 'combo'`): a constituent master product + qty + price. */
 export interface IMasterProductComboItem {
   id?: string
-  childProductId: string
-  childProductName?: string | null
+  itemProductId: string
+  /** Child product display name — carried for hydrating the select on edit. */
+  itemProductName?: string | null
   quantity: number | null
+  price: number | null
 }
 
 /** A global inventory master product (platform-level, SiteAdmin-maintained). */
@@ -123,8 +125,11 @@ export interface IMasterProduct {
   // Suppliers
   suppliers: IMasterProductSupplier[]
 
-  // Combo (read-only passthrough)
+  // Combo (type === 'combo')
   comboItems: IMasterProductComboItem[]
+
+  // Digital (type === 'digital')
+  digitalFileUrl: string | null
 
   // Other
   description: string | null
@@ -206,6 +211,12 @@ export interface IMasterProductForm {
 
   // Suppliers
   suppliers: IMasterProductSupplier[]
+
+  // Combo (type === 'combo')
+  comboItems: IMasterProductComboItem[]
+
+  // Digital (type === 'digital')
+  digitalFileUrl: string
 
   // Other
   description: string

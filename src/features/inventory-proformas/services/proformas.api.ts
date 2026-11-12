@@ -62,6 +62,39 @@ export async function fetchLabTestPage(params: {
   return { data: filtered, meta: { page: 1, totalPages: 1 } }
 }
 
+/**
+ * Builds id→name lookups for resolving proforma line items (which store only
+ * `masterProductId` / `labTestId`, no names) into human-readable labels.
+ *
+ * - products: `GET /inventory-api/v1/master-products/manage` (first 500).
+ * - labTests: `GET /api/v1/siteadmin/lab-tests/options` (returns all).
+ *
+ * Mirrors the envelope-unwrapping used elsewhere in this file: the {@link api}
+ * client unwraps `{ success, data, meta }`, so `res.data` is the array.
+ * Returns empty maps gracefully when a source has no rows.
+ */
+export async function fetchProformaLabelMaps(): Promise<{
+  products: Map<string, string>
+  labTests: Map<string, string>
+}> {
+  const [productsRes, labTestsRes] = await Promise.all([
+    api.get<{ id: string; name: string }[]>('/inventory-api/v1/master-products/manage', {
+      params: { page: 1, limit: 100 },
+    }),
+    api.get<{ id: string; name: string }[]>('/api/v1/siteadmin/lab-tests/options'),
+  ])
+
+  const productRows = (productsRes.data as { id: string; name: string }[]) ?? []
+  const labTestRows = (labTestsRes.data as { id: string; name: string }[]) ?? []
+
+  const products = new Map<string, string>()
+  for (const p of productRows) products.set(p.id, p.name)
+  const labTests = new Map<string, string>()
+  for (const t of labTestRows) labTests.set(t.id, t.name)
+
+  return { products, labTests }
+}
+
 export async function listProformas(params: {
   page: number
   limit: number

@@ -17,6 +17,7 @@ import {
   getProforma,
   updateProforma,
   fetchLabTestPage,
+  fetchProformaLabelMaps,
   type IProforma,
   type IProformaPayload,
 } from '../services/proformas.api'
@@ -66,17 +67,27 @@ export function ProformaFormModal({ proforma, onClose }: Props) {
     enabled: isEdit,
   })
 
+  // Items store only ids; resolve display names from these id→name maps.
+  const labelMaps = useQuery({
+    queryKey: ['inventory', 'proformas', 'labelMaps'],
+    queryFn: fetchProformaLabelMaps,
+    enabled: isEdit,
+  })
+
   useEffect(() => {
     if (!detail.data) return
+    const products = labelMaps.data?.products
+    const labTests = labelMaps.data?.labTests
     const items = detail.data.items ?? []
     const rows = items
       .filter((it) => it.masterProductId || it.labTestId)
       .map<LineRow>((it) => {
         const id = (it.labTestId ?? it.masterProductId) as string
+        const label = (it.labTestId ? labTests?.get(id) : products?.get(id)) ?? id
         return {
           key: `line-${lineSeq++}`,
           type: it.labTestId ? 'LABTEST' : 'PRODUCT',
-          option: { id, label: id },
+          option: { id, label },
           quantity: it.quantity,
         }
       })
@@ -85,7 +96,7 @@ export function ProformaFormModal({ proforma, onClose }: Props) {
       setNotes(detail.data.notes)
       setShowMore(true)
     }
-  }, [detail.data])
+  }, [detail.data, labelMaps.data])
 
   // Fresh form starts with one empty line.
   useEffect(() => {

@@ -19,6 +19,8 @@ import {
   fetchSupplierOptionsPage,
   fetchManufacturerOptionsPage,
   fetchVariantOptionsPage,
+  fetchComboProductOptionsPage,
+  uploadMasterProductFile,
   hasAnyVariantMaster,
 } from '../services/master-products.api'
 import type {
@@ -26,6 +28,7 @@ import type {
   IMasterProductForm,
   IMasterProductSupplier,
   IMasterProductVariant,
+  IMasterProductComboItem,
 } from '../interfaces'
 import { CUSTOM_FIELD_COUNT } from '../interfaces'
 import {
@@ -172,6 +175,35 @@ export function MasterProductFormModal({ product, loading, onClose }: Props) {
     )
   const removeSupplier = (i: number) =>
     set('suppliers', form.suppliers.filter((_, idx) => idx !== i))
+
+  /* ── combo-item row helpers (type === 'combo') ──────────────────────────── */
+  const addComboItem = () =>
+    set('comboItems', [
+      ...form.comboItems,
+      { itemProductId: '', itemProductName: '', quantity: 1, price: null },
+    ])
+  const updateComboItem = (i: number, patch: Partial<IMasterProductComboItem>) =>
+    set(
+      'comboItems',
+      form.comboItems.map((c, idx) => (idx === i ? { ...c, ...patch } : c)),
+    )
+  const removeComboItem = (i: number) =>
+    set('comboItems', form.comboItems.filter((_, idx) => idx !== i))
+
+  /* ── digital file upload (type === 'digital') ───────────────────────────── */
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const onDigitalFile = async (file: File | undefined) => {
+    if (!file) return
+    setUploadingFile(true)
+    try {
+      const { url } = await uploadMasterProductFile(file)
+      set('digitalFileUrl', url)
+    } catch {
+      setFormError('Failed to upload digital file')
+    } finally {
+      setUploadingFile(false)
+    }
+  }
 
   const customFields = Array.from(
     { length: CUSTOM_FIELD_COUNT },
@@ -661,6 +693,118 @@ export function MasterProductFormModal({ product, loading, onClose }: Props) {
                   )}
                 </div>
               </Block>
+
+              {/* ───────────────────── COMBO ITEMS (type=combo) ───────────────────── */}
+              {form.type === 'combo' && (
+                <Block id={sectionId('Combo Items')} title="Combo Items">
+                  <p className="mb-3 text-xs text-notion-faint">
+                    The constituent products that make up this combo, each with a quantity and price.
+                  </p>
+                  <div className="space-y-2">
+                    {form.comboItems.length > 0 && (
+                      <div className="grid grid-cols-[1fr_120px_120px_32px] gap-2 px-1 text-[11px] font-semibold uppercase text-notion-faint">
+                        <span>Product</span>
+                        <span>Quantity</span>
+                        <span>Price</span>
+                        <span />
+                      </div>
+                    )}
+                    {form.comboItems.map((c, i) => (
+                      <div key={i} className="grid grid-cols-[1fr_120px_120px_32px] items-center gap-2">
+                        <PaginatedSelect
+                          queryKey={['inventory', 'master-products', 'combo-options']}
+                          fetchPage={fetchComboProductOptionsPage}
+                          value={opt(c.itemProductId, c.itemProductName ?? '')}
+                          onChange={(o) =>
+                            updateComboItem(i, {
+                              itemProductId: o?.id ?? '',
+                              itemProductName: o?.label ?? '',
+                            })
+                          }
+                          disabled={busy}
+                          placeholder="Select a product…"
+                        />
+                        <Input
+                          type="number"
+                          value={c.quantity == null ? '' : String(c.quantity)}
+                          onChange={(e) =>
+                            updateComboItem(i, {
+                              quantity: e.target.value === '' ? null : Number(e.target.value),
+                            })
+                          }
+                          disabled={busy}
+                        />
+                        <Input
+                          type="number"
+                          value={c.price == null ? '' : String(c.price)}
+                          onChange={(e) =>
+                            updateComboItem(i, {
+                              price: e.target.value === '' ? null : Number(e.target.value),
+                            })
+                          }
+                          disabled={busy}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Remove combo item"
+                          onClick={() => removeComboItem(i)}
+                          disabled={busy}
+                          className="flex h-8 w-8 items-center justify-center rounded-md text-notion-faint hover:bg-notion-hover hover:text-notion-red"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                    <Button type="button" variant="secondary" size="sm" onClick={addComboItem} disabled={busy}>
+                      + Add combo item
+                    </Button>
+                  </div>
+                </Block>
+              )}
+
+              {/* ──────────────────── DIGITAL FILE (type=digital) ──────────────────── */}
+              {form.type === 'digital' && (
+                <Block id={sectionId('Digital File')} title="Digital File">
+                  <p className="mb-3 text-xs text-notion-faint">
+                    The downloadable file delivered for this digital product.
+                  </p>
+                  <div className="flex items-center gap-3">
+                    {form.digitalFileUrl ? (
+                      <a
+                        href={form.digitalFileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="truncate text-sm text-notion-blue underline"
+                      >
+                        {form.digitalFileUrl.split('/').pop()}
+                      </a>
+                    ) : (
+                      <span className="text-sm text-notion-faint">No file</span>
+                    )}
+                    <label className="cursor-pointer rounded-md border border-notion-line px-3 py-1.5 text-sm text-notion-text hover:bg-notion-hover">
+                      {uploadingFile ? 'Uploading…' : form.digitalFileUrl ? 'Replace' : 'Upload'}
+                      <input
+                        type="file"
+                        className="hidden"
+                        disabled={busy || uploadingFile}
+                        onChange={(e) => onDigitalFile(e.target.files?.[0])}
+                      />
+                    </label>
+                    {form.digitalFileUrl && (
+                      <button
+                        type="button"
+                        onClick={() => set('digitalFileUrl', '')}
+                        disabled={busy || uploadingFile}
+                        className="text-sm text-notion-faint hover:text-notion-red"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </Block>
+              )}
 
               {/* ───────────────────────── OTHER ───────────────────────── */}
               <Block id={sectionId('Other')} title="Other">

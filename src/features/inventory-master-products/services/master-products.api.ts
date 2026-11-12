@@ -36,6 +36,16 @@ const UPLOAD_URL = '/api/v1/siteadmin/uploads/attachment'
 const num = (v: string): number | undefined => (v.trim() === '' ? undefined : Number(v))
 const str = (v: string): string | undefined => (v.trim() === '' ? undefined : v.trim())
 
+/** Map the form's display enum values to the backend's SCREAMING_SNAKE enums. */
+const SALES_METHOD_MAP: Record<string, 'INDIVIDUAL' | 'PACK'> = {
+  Individual: 'INDIVIDUAL',
+  Pack: 'PACK',
+}
+const TAX_METHOD_MAP: Record<string, 'INCLUSIVE' | 'EXCLUSIVE'> = {
+  Inclusive: 'INCLUSIVE',
+  Exclusive: 'EXCLUSIVE',
+}
+
 /** Convert the string-based form into the backend's typed create/update payload. */
 function toPayload(form: IMasterProductForm): Record<string, unknown> {
   const payload: Record<string, unknown> = {
@@ -47,16 +57,16 @@ function toPayload(form: IMasterProductForm): Record<string, unknown> {
     categoryId: str(form.categoryId),
     subCategoryId: str(form.subCategoryId),
     unitId: str(form.unitId),
-    packSize: num(form.packSize),
-    salesMethod: form.salesMethod,
+    packSize: str(form.packSize),
+    salesMethod: SALES_METHOD_MAP[form.salesMethod],
     packCost: num(form.packCost),
     cost: num(form.cost),
     packMrp: num(form.packMrp),
     price: num(form.price),
     taxRateId: str(form.taxRateId),
     hsnCode: str(form.hsnCode),
-    taxMethod: form.taxMethod,
-    taxMethodPurchase: form.taxMethodPurchase,
+    taxMethod: TAX_METHOD_MAP[form.taxMethod],
+    taxMethodPurchase: TAX_METHOD_MAP[form.taxMethodPurchase],
     alertQuantity: num(form.alertQuantity),
     isTrackQuantity: form.isTrackQuantity,
     imageUrl: str(form.imageUrl),
@@ -72,8 +82,8 @@ function toPayload(form: IMasterProductForm): Record<string, unknown> {
     isActive: form.isActive,
   }
 
-  // Prescription fields — only sent when the section is enabled.
-  payload.hasPrescriptionFields = form.hasPrescriptionFields
+  // Prescription fields — only sent when the section is enabled. (The
+  // `hasPrescriptionFields` gate is FE-only; the backend infers from the values.)
   if (form.hasPrescriptionFields) {
     payload.composition = str(form.composition)
     payload.strength = str(form.strength)
@@ -81,15 +91,14 @@ function toPayload(form: IMasterProductForm): Record<string, unknown> {
     payload.formulation = str(form.formulation)
     payload.route = str(form.route)
     payload.frequency = str(form.frequency)
-    payload.numberOfDays = num(form.numberOfDays)
-    payload.prescriptionQuantity = num(form.prescriptionQuantity)
-    payload.refills = form.refills
-    payload.refillTimes = num(form.refillTimes)
+    payload.numberOfDays = str(form.numberOfDays)
+    payload.prescriptionQuantity = str(form.prescriptionQuantity)
+    payload.refills = form.refills ? 'yes' : undefined
+    payload.refillTimes = str(form.refillTimes)
     payload.prescriptionNotes = str(form.prescriptionNotes)
   }
 
-  // Custom fields — only sent when the section is enabled.
-  payload.hasCustomFields = form.hasCustomFields
+  // Custom fields — only sent when the section is enabled. (FE-only gate.)
   if (form.hasCustomFields) {
     payload.cf1 = str(form.cf1)
     payload.cf2 = str(form.cf2)
@@ -125,6 +134,21 @@ function toPayload(form: IMasterProductForm): Record<string, unknown> {
       partNumber: s.partNumber?.trim() || undefined,
       price: s.price == null ? undefined : Number(s.price),
     }))
+
+  // Combo items — only sent for a combo product (rows with a chosen child product).
+  payload.comboItems =
+    form.type === 'combo'
+      ? form.comboItems
+          .filter((c) => c.itemProductId)
+          .map((c) => ({
+            itemProductId: c.itemProductId,
+            quantity: c.quantity == null ? undefined : Number(c.quantity),
+            price: c.price == null ? undefined : Number(c.price),
+          }))
+      : []
+
+  // Digital file — only sent for a digital product.
+  payload.digitalFileUrl = form.type === 'digital' ? str(form.digitalFileUrl) : undefined
 
   return payload
 }
@@ -242,6 +266,59 @@ export async function fetchVariantOptionsPage(params: {
   }
 }
 
+/**
+ * Fetch one page of master products as combo-child options in the
+ * {@link PaginatedSelect} shape (id + name), from the SiteAdmin catalogue.
+ */
+export async function fetchComboProductOptionsPage(params: {
+  page: number
+  search: string
+  pageSize: number
+}): Promise<PageResult> {
+  const query: Record<string, string | number> = { page: params.page, limit: params.pageSize }
+  if (params.search?.trim()) query.search = params.search.trim()
+  const res = await inventoryApi.get<{ id: string; name: string }[]>(BASE, { params: query })
+  const rows = (res.data as { id: string; name: string }[]) ?? []
+  const meta = (res as { meta?: { page?: number; totalPages?: number } }).meta ?? {}
+  return {
+    data: rows.map((r) => ({ id: r.id, name: r.name })),
+    meta: { page: meta.page ?? params.page, totalPages: meta.totalPages ?? 1 },
+  }
+}
+
+/** A master product's drug-composition row (EZHT "Drugs" modal). */
+export interface IMasterProductDrug {
+  id: string
+  name: string
+  unitValue: string | null
+  unit: string | null
+}
+
+/** List a product's drug-composition rows. */
+export async function listProductDrugs(productId: string): Promise<IMasterProductDrug[]> {
+  const res = await inventoryApi.get<IMasterProductDrug[]>(`${BASE}/${productId}/drugs`)
+  return (res.data as IMasterProductDrug[]) ?? []
+}
+
+/** Add a drug-composition row to a product. */
+export async function addProductDrug(
+  productId: string,
+  body: { name: string; unitValue?: string; unit?: string },
+): Promise<IMasterProductDrug> {
+  const res = await inventoryApi.post<IMasterProductDrug>(`${BASE}/${productId}/drugs`, body, {
+    successMessage: 'Drug added',
+  })
+  return res.data as IMasterProductDrug
+}
+
+/** Delete a single drug-composition row from a product. */
+export async function deleteProductDrug(productId: string, drugId: string): Promise<unknown> {
+  const res = await inventoryApi.delete(`${BASE}/${productId}/drugs/${drugId}`, {
+    successMessage: 'Drug removed',
+  })
+  return res.data
+}
+
 /** True when the Variant Master has at least one entry (gates free-text fallback). */
 export async function hasAnyVariantMaster(): Promise<boolean> {
   const res = await inventoryApi.get<{ id: string; name: string }[]>(VARIANTS, {
@@ -266,29 +343,18 @@ export async function uploadMasterProductImage(file: File): Promise<{ url: strin
   return res.data
 }
 
-/** The prescription-only subset edited by the list's "Drugs" quick-edit modal. */
-export interface IMasterProductPrescription {
-  hasPrescriptionFields: boolean
-  composition: string | null
-  strength: string | null
-  unitType: string | null
-  formulation: string | null
-  route: string | null
-  frequency: string | null
-  numberOfDays: number | null
-  prescriptionQuantity: number | null
-  refills: boolean
-  refillTimes: number | null
-  prescriptionNotes: string | null
-}
-
-/** Patch only the prescription fields of a product (used by the Drugs modal). */
-export async function updateMasterProductPrescription(
-  id: string,
-  body: IMasterProductPrescription,
-): Promise<unknown> {
-  const res = await inventoryApi.patch(`${BASE}/${id}`, body, {
-    successMessage: 'Prescription details saved',
+/**
+ * Upload a digital-product file (type=digital) to S3 and return its public URL.
+ * Uses the same SiteAdmin attachment endpoint as images (which also accepts the
+ * common document formats stored as a product's digital file).
+ */
+export async function uploadMasterProductFile(file: File): Promise<{ url: string }> {
+  const fd = new FormData()
+  fd.append('file', file)
+  const res = await api.post<{ url: string }>(UPLOAD_URL, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    skipSuccessToast: true,
   })
   return res.data
 }
+

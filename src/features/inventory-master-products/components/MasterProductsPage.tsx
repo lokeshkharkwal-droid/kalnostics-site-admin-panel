@@ -12,10 +12,14 @@ import {
   duplicateMasterProduct,
 } from '../services/master-products.api'
 import type { IMasterProduct } from '../interfaces'
+import { downloadMasterProductsCsv } from '../utils/export-csv'
 import { MasterProductFormModal } from './MasterProductFormModal'
 import { DrugsModal } from './DrugsModal'
 
 const LIMIT = 20
+
+/** Page size used when paging through the full catalogue for an export-all. */
+const EXPORT_PAGE_SIZE = 100
 
 /** Open the (stubbed) barcode/label print page for a product. */
 const printHref = (id: string) => `/inventory-print-barcode?product=${id}`
@@ -32,6 +36,10 @@ export function MasterProductsPage() {
   const [confirmDelete, setConfirmDelete] = useState<IMasterProduct | null>(null)
   const [previewImage, setPreviewImage] = useState<IMasterProduct | null>(null)
   const [drugsProduct, setDrugsProduct] = useState<IMasterProduct | null>(null)
+
+  // Bulk row-selection (by product id) and the CSV-export loading flag.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [exporting, setExporting] = useState(false)
 
   const debouncedSearch = useDebouncedValue(search, 400)
   useEffect(() => {
@@ -83,7 +91,102 @@ export function MasterProductsPage() {
     setEditingId(null)
   }
 
+  /* ── bulk selection ───────────────────────────────────────────────────── */
+
+  // Whether every currently-loaded row is selected (drives the header checkbox).
+  const allLoadedSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id))
+  const someLoadedSelected = rows.some((r) => selectedIds.has(r.id))
+
+  function toggleRow(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  /** Header checkbox: select or deselect all currently-loaded rows. */
+  function toggleAllLoaded() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (allLoadedSelected) rows.forEach((r) => next.delete(r.id))
+      else rows.forEach((r) => next.add(r.id))
+      return next
+    })
+  }
+
+  /* ── CSV export ───────────────────────────────────────────────────────── */
+
+  /**
+   * Export selected rows if any are selected; otherwise page through the full
+   * catalogue (matching the current search) and export everything.
+   */
+  async function handleExport() {
+    if (exporting) return
+    setExporting(true)
+    try {
+      // When some selected rows live on other (not-currently-loaded) pages, page
+      // through the catalogue so the export isn't limited to the visible page.
+      const selectedOnThisPage = rows.filter((r) => selectedIds.has(r.id))
+      let exportRows: IMasterProduct[]
+      if (selectedIds.size > 0 && selectedOnThisPage.length === selectedIds.size) {
+        exportRows = selectedOnThisPage
+      } else {
+        const collected: IMasterProduct[] = []
+        const first = await listMasterProducts({
+          page: 1,
+          limit: EXPORT_PAGE_SIZE,
+          search: debouncedSearch,
+        })
+        collected.push(...first.rows)
+        for (let p = 2; p <= first.totalPages; p++) {
+          const next = await listMasterProducts({
+            page: p,
+            limit: EXPORT_PAGE_SIZE,
+            search: debouncedSearch,
+          })
+          collected.push(...next.rows)
+        }
+        exportRows = selectedIds.size > 0 ? collected.filter((r) => selectedIds.has(r.id)) : collected
+      }
+      downloadMasterProductsCsv(exportRows)
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const columns: Column<IMasterProduct>[] = [
+    {
+      id: 'select',
+      header: (
+        <input
+          type="checkbox"
+          aria-label="Select all loaded rows"
+          className="h-3.5 w-3.5 cursor-pointer rounded border-notion-line2 accent-notion-blue"
+          checked={allLoadedSelected}
+          ref={(el) => {
+            if (el) el.indeterminate = !allLoadedSelected && someLoadedSelected
+          }}
+          onChange={toggleAllLoaded}
+        />
+      ),
+      truncate: false,
+      width: 40,
+      minWidth: 40,
+      resizable: false,
+      align: 'center',
+      cell: (r) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${r.name}`}
+          className="h-3.5 w-3.5 cursor-pointer rounded border-notion-line2 accent-notion-blue"
+          checked={selectedIds.has(r.id)}
+          onClick={(e) => e.stopPropagation()}
+          onChange={() => toggleRow(r.id)}
+        />
+      ),
+    },
     {
       header: 'Image',
       truncate: false,
@@ -128,9 +231,19 @@ export function MasterProductsPage() {
         title="Master Products"
         subtitle="Global inventory catalogue tenants import into their own inventory"
         actions={
-          <Button size="sm" onClick={openCreate}>
-            + Add product
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleExport}
+              loading={exporting}
+            >
+              {selectedIds.size > 0 ? `Export CSV (${selectedIds.size})` : 'Export CSV'}
+            </Button>
+            <Button size="sm" onClick={openCreate}>
+              + Add product
+            </Button>
+          </div>
         }
       />
 

@@ -1,7 +1,13 @@
-import type { IMasterProduct, IMasterProductForm } from '../interfaces'
+import type { IMasterProduct, IMasterProductForm, SalesMethod, TaxMethod } from '../interfaces'
 
 const s = (v: string | null | undefined): string => v ?? ''
 const n = (v: number | null | undefined): string => (v == null ? '' : String(v))
+
+/** Backend SCREAMING_SNAKE enums → the form's display values (tolerant of either). */
+const toSalesMethod = (v: string | null | undefined): SalesMethod =>
+  String(v).toUpperCase() === 'PACK' ? 'Pack' : 'Individual'
+const toTaxMethod = (v: string | null | undefined): TaxMethod =>
+  String(v).toUpperCase() === 'INCLUSIVE' ? 'Inclusive' : 'Exclusive'
 
 /** Build a blank form for the "Add product" flow (with EZ Health Track defaults). */
 export function emptyForm(): IMasterProductForm {
@@ -73,6 +79,12 @@ export function emptyForm(): IMasterProductForm {
     // Suppliers
     suppliers: [],
 
+    // Combo
+    comboItems: [],
+
+    // Digital
+    digitalFileUrl: '',
+
     // Other
     description: '',
     invoiceDetails: '',
@@ -96,7 +108,7 @@ export function toForm(p: IMasterProduct): IMasterProductForm {
     unitId: s(p.unitId),
     unitName: s(p.unitName),
     packSize: n(p.packSize),
-    salesMethod: p.salesMethod ?? 'Individual',
+    salesMethod: toSalesMethod(p.salesMethod),
     packCost: n(p.packCost),
     cost: n(p.cost),
     packMrp: n(p.packMrp),
@@ -104,8 +116,8 @@ export function toForm(p: IMasterProduct): IMasterProductForm {
     taxRateId: s(p.taxRateId),
     taxRateName: s(p.taxRateName),
     hsnCode: s(p.hsnCode),
-    taxMethod: p.taxMethod ?? 'Exclusive',
-    taxMethodPurchase: p.taxMethodPurchase ?? 'Exclusive',
+    taxMethod: toTaxMethod(p.taxMethod),
+    taxMethodPurchase: toTaxMethod(p.taxMethodPurchase),
     alertQuantity: n(p.alertQuantity),
     isTrackQuantity: p.isTrackQuantity ?? true,
     imageUrl: s(p.imageUrl),
@@ -160,6 +172,20 @@ export function toForm(p: IMasterProduct): IMasterProductForm {
           price: sup.price,
         }))
       : [],
+
+    // Combo
+    comboItems: Array.isArray(p.comboItems)
+      ? p.comboItems.map((c) => ({
+          id: c.id,
+          itemProductId: c.itemProductId,
+          itemProductName: c.itemProductName ?? null,
+          quantity: c.quantity,
+          price: c.price,
+        }))
+      : [],
+
+    // Digital
+    digitalFileUrl: s(p.digitalFileUrl),
 
     // Other
     description: s(p.description),

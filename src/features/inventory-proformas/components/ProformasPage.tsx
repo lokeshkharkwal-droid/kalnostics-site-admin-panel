@@ -7,6 +7,7 @@ import { Badge, Button, DataTable, Input, PageLoader, type Column } from '@/shar
 import { useDebouncedValue } from '@/shared/hooks'
 import { deleteProforma, listProformas, type IProforma } from '../services/proformas.api'
 import { ProformaFormModal } from './ProformaFormModal'
+import { ProformaDetailsModal } from './ProformaDetailsModal'
 
 const LIMIT = 20
 
@@ -22,6 +23,7 @@ export function ProformasPage() {
   const [page, setPage] = useState(1)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<IProforma | null>(null)
+  const [viewing, setViewing] = useState<IProforma | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<IProforma | null>(null)
 
   const debouncedSearch = useDebouncedValue(search, 400)
@@ -109,7 +111,15 @@ export function ProformasPage() {
             rowKey={(r) => r.id}
             emptyMessage={search ? 'No proformas match your search' : 'No proformas yet'}
             actions={(r) => (
+              // NOTE: EZHT's proforma list also had "Lab Test" and "Branch" row
+              // actions. "Lab Test" is already covered by the in-form lab-test
+              // line rows, and "Branch" is N/A at the SiteAdmin platform level
+              // (platform-level proformas have no branches) — so we intentionally
+              // do NOT add those two.
               <div className="flex gap-1.5">
+                <Button variant="secondary" size="sm" onClick={() => setViewing(r)}>
+                  View
+                </Button>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -146,6 +156,8 @@ export function ProformasPage() {
       </main>
 
       {showForm && <ProformaFormModal proforma={editing} onClose={() => setShowForm(false)} />}
+
+      {viewing && <ProformaDetailsModal proforma={viewing} onClose={() => setViewing(null)} />}
 
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
