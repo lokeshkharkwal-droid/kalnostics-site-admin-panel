@@ -1,1 +1,5 @@
-export { ReferenceCrudPage, type ReferenceConfig } from './components/ReferenceCrudPage'
+export {
+  ReferenceCrudPage,
+  type ReferenceConfig,
+  type ReferenceField,
+} from './components/ReferenceCrudPage'
