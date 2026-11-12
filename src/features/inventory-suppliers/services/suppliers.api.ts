@@ -10,7 +10,7 @@ const BASE = '/inventory-api/api/v1/master-suppliers'
 
 /** Convert the string-based form into the backend's typed payload. */
 function toPayload(form: ISupplierForm): Record<string, unknown> {
-  const str = (v: string) => (v.trim() === '' ? undefined : v.trim())
+  const str = (v: string) => (v.trim() === '' ? null : v.trim())
   return {
     company: str(form.company),
     name: form.name.trim(),

@@ -287,14 +287,14 @@ function ReferenceFormModal({
       const body: Record<string, unknown> = { isActive }
       for (const f of config.fields) {
         if (f.kind === 'reference') {
-          body[f.key] = refOptions[f.key]?.id ?? undefined
+          body[f.key] = refOptions[f.key]?.id ?? null
           continue
         }
         const v = form[f.key]?.trim() ?? ''
         if (f.kind === 'number') {
-          body[f.key] = v === '' ? (f.required ? 0 : undefined) : Number(v)
+          body[f.key] = v === '' ? (f.required ? 0 : null) : Number(v)
         } else {
-          body[f.key] = v === '' ? undefined : v
+          body[f.key] = v === '' ? null : v
         }
       }
       return isEdit

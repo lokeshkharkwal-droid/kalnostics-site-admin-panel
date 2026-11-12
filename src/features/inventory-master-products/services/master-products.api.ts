@@ -33,8 +33,8 @@ const VARIANTS = '/inventory-api/api/v1/master-reference/variants'
 const UPLOAD_URL = '/api/v1/siteadmin/uploads/attachment'
 
 /* ── value coercion helpers ─────────────────────────────────────────────── */
-const num = (v: string): number | undefined => (v.trim() === '' ? undefined : Number(v))
-const str = (v: string): string | undefined => (v.trim() === '' ? undefined : v.trim())
+const num = (v: string): number | null => (v.trim() === '' ? null : Number(v))
+const str = (v: string): string | null => (v.trim() === '' ? null : v.trim())
 
 /** Map the form's display enum values to the backend's SCREAMING_SNAKE enums. */
 const SALES_METHOD_MAP: Record<string, 'INDIVIDUAL' | 'PACK'> = {
@@ -93,9 +93,15 @@ function toPayload(form: IMasterProductForm): Record<string, unknown> {
     payload.frequency = str(form.frequency)
     payload.numberOfDays = str(form.numberOfDays)
     payload.prescriptionQuantity = str(form.prescriptionQuantity)
-    payload.refills = form.refills ? 'yes' : undefined
+    payload.refills = form.refills ? 'yes' : 'no'
     payload.refillTimes = str(form.refillTimes)
     payload.prescriptionNotes = str(form.prescriptionNotes)
+  } else {
+    for (const k of [
+      'composition', 'strength', 'unitType', 'formulation', 'route', 'frequency',
+      'numberOfDays', 'prescriptionQuantity', 'refillTimes', 'prescriptionNotes',
+    ]) payload[k] = null
+    payload.refills = false
   }
 
   // Custom fields — only sent when the section is enabled. (FE-only gate.)
@@ -111,6 +117,8 @@ function toPayload(form: IMasterProductForm): Record<string, unknown> {
     payload.cf9 = str(form.cf9)
     payload.cf10 = str(form.cf10)
     payload.cf11 = str(form.cf11)
+  } else {
+    for (let i = 1; i <= 11; i++) payload[`cf${i}`] = null
   }
 
   // Variants — only sent when the product has variants.
