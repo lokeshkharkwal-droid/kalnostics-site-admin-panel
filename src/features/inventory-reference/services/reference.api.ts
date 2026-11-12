@@ -8,7 +8,7 @@ import type { PageResult } from '@/shared/ui'
  * The main {@link api} client attaches the SiteAdmin token for `/inventory-api/*`
  * paths automatically.
  */
-const BASE = '/inventory-api/v1/master-reference'
+const BASE = '/inventory-api/api/v1/master-reference'
 
 /** SiteAdmin image upload (tenant-less; used by Categories' imageUrl field). */
 const UPLOAD_URL = '/api/v1/siteadmin/uploads/attachment'

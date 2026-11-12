@@ -14,16 +14,16 @@ import type {
  * {@link inventoryApi} client attaches the SiteAdmin token and unwraps the
  * `{ success, data, meta }` envelope.
  */
-const BASE = '/inventory-api/v1/master-products/manage'
+const BASE = '/inventory-api/api/v1/master-products/manage'
 
 /** Suppliers option endpoint (id + name) used by the supplier-config selects. */
-const SUPPLIERS_OPTIONS = '/inventory-api/v1/master-suppliers/options'
+const SUPPLIERS_OPTIONS = '/inventory-api/api/v1/master-suppliers/options'
 
 /** Manufacturers list endpoint (rows carry id + name) for the manufacturer select. */
-const MANUFACTURERS = '/inventory-api/v1/master-manufacturers'
+const MANUFACTURERS = '/inventory-api/api/v1/master-manufacturers'
 
 /** SiteAdmin Variant Master (id + name) — the source for variant-row names. */
-const VARIANTS = '/inventory-api/v1/master-reference/variants'
+const VARIANTS = '/inventory-api/api/v1/master-reference/variants'
 
 /**
  * SiteAdmin image upload for master-product images (tenant-less; images only).

@@ -6,7 +6,7 @@ import type {
   ISupplierListResult,
 } from '../interfaces'
 
-const BASE = '/inventory-api/v1/master-suppliers'
+const BASE = '/inventory-api/api/v1/master-suppliers'
 
 /** Convert the string-based form into the backend's typed payload. */
 function toPayload(form: ISupplierForm): Record<string, unknown> {

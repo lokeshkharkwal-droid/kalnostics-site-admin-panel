@@ -11,7 +11,7 @@ import { api } from '@/shared/services/api'
  * CSV import posts each parsed row to the SiteAdmin create route
  * `POST /master-products/manage` instead.
  */
-const MANAGE_BASE = '/inventory-api/v1/master-products/manage'
+const MANAGE_BASE = '/inventory-api/api/v1/master-products/manage'
 
 /** A parsed CSV row ready to create (all values are raw strings from the file). */
 export interface ImportRow {

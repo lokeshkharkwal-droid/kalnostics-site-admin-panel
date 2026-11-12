@@ -6,7 +6,7 @@ import type {
   IManufacturerListResult,
 } from '../interfaces'
 
-const BASE = '/inventory-api/v1/master-manufacturers'
+const BASE = '/inventory-api/api/v1/master-manufacturers'
 
 /** Convert the string-based form into the backend's typed payload. */
 function toPayload(form: IManufacturerForm): Record<string, unknown> {
