@@ -10,10 +10,11 @@ import { toast } from 'sonner'
  * - Unwraps the same `{ success, data, meta }` envelope the main api uses, and
  *   shows the same success/error snackbars.
  *
- * Base URL comes from `NEXT_PUBLIC_INVENTORY_API_URL` (e.g. http://localhost:3100).
+ * Request paths already carry the full `/inventory-api/api/v1/...` prefix (the nginx
+ * route), so the base URL must stay empty — a non-empty base would double the prefix.
  */
 export const inventoryApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_INVENTORY_API_URL ?? '',
+  baseURL: '',
   headers: { 'Content-Type': 'application/json' },
 })
 
