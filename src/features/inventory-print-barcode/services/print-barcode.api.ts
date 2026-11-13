@@ -6,7 +6,7 @@ import type { PageResult } from '@/shared/ui'
  * the shared nginx `/inventory-api` route. The main {@link api} client attaches
  * the SiteAdmin token for `/inventory-api/*` paths automatically.
  */
-const MANAGE_BASE = '/inventory-api/v1/master-products/manage'
+const MANAGE_BASE = '/inventory-api/api/v1/master-products/manage'
 
 /** A master product as returned by the SiteAdmin management list. */
 export interface IPrintProduct {

@@ -9,7 +9,7 @@ import { api } from '@/shared/services/api'
  * - `GET  /master-settings` → the singleton row (we read its `data`).
  * - `PUT  /master-settings` with body `{ data: {...} }` → shallow-merges and saves.
  */
-const BASE = '/inventory-api/v1/master-settings'
+const BASE = '/inventory-api/api/v1/master-settings'
 
 /** The settings singleton as stored on the backend. */
 export interface ISettingsRecord {

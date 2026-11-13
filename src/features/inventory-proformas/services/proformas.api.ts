@@ -6,7 +6,7 @@ import { api } from '@/shared/services/api'
  * {@link api} client attaches the SiteAdmin token automatically for
  * `/inventory-api/*` paths.
  */
-const BASE = '/inventory-api/v1/master-proformas'
+const BASE = '/inventory-api/api/v1/master-proformas'
 
 /** A proforma line item (a master product + quantity). */
 export interface IProformaItem {
@@ -66,7 +66,7 @@ export async function fetchLabTestPage(params: {
  * Builds id→name lookups for resolving proforma line items (which store only
  * `masterProductId` / `labTestId`, no names) into human-readable labels.
  *
- * - products: `GET /inventory-api/v1/master-products/manage` (first 500).
+ * - products: `GET /inventory-api/api/v1/master-products/manage` (first 500).
  * - labTests: `GET /api/v1/siteadmin/lab-tests/options` (returns all).
  *
  * Mirrors the envelope-unwrapping used elsewhere in this file: the {@link api}
@@ -78,7 +78,7 @@ export async function fetchProformaLabelMaps(): Promise<{
   labTests: Map<string, string>
 }> {
   const [productsRes, labTestsRes] = await Promise.all([
-    api.get<{ id: string; name: string }[]>('/inventory-api/v1/master-products/manage', {
+    api.get<{ id: string; name: string }[]>('/inventory-api/api/v1/master-products/manage', {
       params: { page: 1, limit: 100 },
     }),
     api.get<{ id: string; name: string }[]>('/api/v1/siteadmin/lab-tests/options'),
