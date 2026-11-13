@@ -97,7 +97,6 @@ const NAV_ITEMS: NavItem[] = [
       { label: 'Master Products', href: '/inventory-master-products', minRole: 'content_admin' },
       { label: 'Print Barcode', href: '/inventory-print-barcode', minRole: 'content_admin' },
       { label: 'Import Products', href: '/inventory-import-products', minRole: 'content_admin' },
-      { label: 'Proformas', href: '/inventory-proformas', minRole: 'content_admin' },
       { label: 'Manufacturers', href: '/inventory-manufacturers', minRole: 'content_admin' },
       { label: 'Suppliers', href: '/inventory-suppliers', minRole: 'content_admin' },
       { label: 'Categories', href: '/inventory-categories', minRole: 'content_admin' },
