@@ -168,6 +168,12 @@ export interface LabTestWriteDto {
   repeatIntervalValue?: number
   repeatIntervalUnit?: RepeatIntervalUnit
   isOverrideAllowed?: boolean
+  /** Age Restriction: when true all four bounds are required (min ≤ max); false = no age limit. */
+  isAgeRestricted?: boolean
+  minAgeValue?: number | null
+  minAgeUnit?: AgeUnit | null
+  maxAgeValue?: number | null
+  maxAgeUnit?: AgeUnit | null
   isActive?: boolean
   usefulFor?: string
   interpretationOfResults?: string
@@ -242,6 +248,12 @@ export interface LabTestEntity {
   repeatIntervalValue: number | null
   repeatIntervalUnit: RepeatIntervalUnit | null
   isOverrideAllowed: boolean
+  /** Age Restriction (bounds are null when off). Optional for older responses. */
+  isAgeRestricted?: boolean
+  minAgeValue?: number | null
+  minAgeUnit?: AgeUnit | null
+  maxAgeValue?: number | null
+  maxAgeUnit?: AgeUnit | null
   isActive: boolean
   usefulFor: string | null
   interpretationOfResults: string | null

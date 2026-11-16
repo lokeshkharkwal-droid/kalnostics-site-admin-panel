@@ -60,3 +60,6 @@ export const RulerIcon = ({ className }: IconProps) => (
 export const NotesIcon = ({ className }: IconProps) => (
   <svg {...base(className)}><path d="M7 3h10a1 1 0 011 1v16a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg>
 )
+export const ClipboardCopyIcon = ({ className }: IconProps) => (
+  <svg {...base(className)}><path d="M9 4h6a1 1 0 011 1v1a1 1 0 01-1 1H9a1 1 0 01-1-1V5a1 1 0 011-1z" /><path d="M16 5h2a1 1 0 011 1v14a1 1 0 01-1 1H6a1 1 0 01-1-1V6a1 1 0 011-1h2" /><path d="M9 13h6M12 10v6" /></svg>
+)

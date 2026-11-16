@@ -181,6 +181,7 @@ export const emptyTest = (): LabTest => ({
   clinicalTags: '', icdCode: '', loincCode: '',
   samplePriorityType: 'Routine', enable: true,
   repeatIntervalRestriction: false, intervalDuration: '', intervalUnit: 'Hours', intervalOverrideAllowed: false,
+  ageRestriction: false, minAge: '', minAgeUnit: 'Years', maxAge: '', maxAgeUnit: 'Years',
   priceMSRP: 0, priceMax: 0, priceMin: 0, priceOriginal: 0, franchisePrice: 0, emergencyPrice: 0,
   allowPriceOverride: false, discountCap: 0,
   tatMin: 0, tatMinUnit: 'Hours', tatMax: 0, tatMaxUnit: 'Hours',

@@ -3,8 +3,9 @@
 import { useState, type Dispatch, type SetStateAction } from 'react'
 import { Button } from '@/shared/ui'
 import type { LabTest } from '../../interfaces'
-import { PencilIcon, PlusIcon, TrashIcon } from '../icons'
+import { ClipboardCopyIcon, PencilIcon, PlusIcon, TrashIcon } from '../icons'
 import { AddResultDialog } from './results/AddResultDialog'
+import { CopyResultsDialog } from './results/CopyResultsDialog'
 
 interface ResultGroup {
   groupName: string
@@ -37,8 +38,14 @@ function buildGroups(results: LabTest['results']): ResultGroup[] {
    sections/results/AddResultDialog.tsx). Group Settings / Icon Settings /
    Image Settings are intentionally omitted (tenant settings refs, not
    applicable to templates). */
-export function ResultsSection({ data, setData }: { data: LabTest; setData: Dispatch<SetStateAction<LabTest>> }) {
+export function ResultsSection({ data, setData, allowCopy = false }: {
+  data: LabTest
+  setData: Dispatch<SetStateAction<LabTest>>
+  /** Show "Copy Result" (copy result groups, with their reference ranges and values, from another test). Add New Test only. */
+  allowCopy?: boolean
+}) {
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [copyOpen, setCopyOpen] = useState(false)
   const [editingGroupName, setEditingGroupName] = useState<string | null>(null)
 
   const groups = buildGroups(data.results)
@@ -52,7 +59,12 @@ export function ResultsSection({ data, setData }: { data: LabTest; setData: Disp
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-notion-sub">{data.results.length} result parameter(s)</span>
-        <Button size="sm" onClick={openAdd}><PlusIcon className="h-3.5 w-3.5" />Add Result</Button>
+        <div className="flex items-center gap-2">
+          {allowCopy && (
+            <Button size="sm" variant="secondary" onClick={() => setCopyOpen(true)}><ClipboardCopyIcon className="h-3.5 w-3.5" />Copy Result</Button>
+          )}
+          <Button size="sm" onClick={openAdd}><PlusIcon className="h-3.5 w-3.5" />Add Result</Button>
+        </div>
       </div>
 
       {groups.map(g => (
@@ -80,6 +92,7 @@ export function ResultsSection({ data, setData }: { data: LabTest; setData: Disp
         setData={setData}
         editingGroupName={editingGroupName}
       />
+      {allowCopy && <CopyResultsDialog open={copyOpen} onClose={() => setCopyOpen(false)} data={data} setData={setData} />}
     </div>
   )
 }
