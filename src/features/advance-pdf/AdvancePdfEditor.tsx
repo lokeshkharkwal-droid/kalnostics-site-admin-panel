@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { ToastContainer } from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
-import { copyToClipboard } from '@/shared/utils';
+import { copyToClipboard, openPdfBlob, pdfFilename } from '@/shared/utils';
 import {
   getTemplate,
   saveDoc,
@@ -345,8 +345,9 @@ export function AdvancePdfEditor({ basePath }: AdvancePdfEditorProps) {
     if (!tpl) return;
     try {
       const blob = await renderPdf(id);
-      const url  = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      // Open in a new tab with a named Download button so the saved file is
+      // `<Template Name>.pdf` rather than the blob URL's random id.
+      openPdfBlob(blob, pdfFilename(tpl.name));
     } catch (e) {
       toast(`Download failed: ${(e as Error).message}`, 'error');
     }

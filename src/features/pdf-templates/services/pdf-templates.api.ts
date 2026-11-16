@@ -11,6 +11,9 @@ import type {
 /** SITE_ADMIN global PDF report templates (shared across every business). */
 const BASE = '/api/v1/siteadmin/pdf-report-templates'
 
+/** SiteAdmin image upload for global templates (tenant-less; images only). */
+const UPLOAD_URL = '/api/v1/siteadmin/uploads/attachment'
+
 type ListMeta = { total?: number; totalPages?: number; page?: number }
 
 /** Paginated, server-filtered template list (search matches name). */
@@ -74,6 +77,21 @@ export async function deleteTemplate(id: string): Promise<PdfTemplateEntity> {
 /** Supported template type keys + human labels (for the type select/filter). */
 export async function fetchTemplateTypes(): Promise<TemplateTypes> {
   const res = await api.get<TemplateTypes>(`${BASE}/options/types`)
+  return res.data
+}
+
+/**
+ * Upload a single image for a global template to S3 and return its public URL.
+ * The caller derives a token id from the URL and stores `id → url` in
+ * `meta.images` (or the URL directly in `meta.watermark_image`).
+ */
+export async function uploadTemplateImage(file: File): Promise<{ url: string }> {
+  const fd = new FormData()
+  fd.append('file', file)
+  const res = await api.post<{ url: string }>(UPLOAD_URL, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    skipSuccessToast: true,
+  })
   return res.data
 }
 

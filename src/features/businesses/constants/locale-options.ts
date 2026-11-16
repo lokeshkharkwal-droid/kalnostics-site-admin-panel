@@ -25,6 +25,12 @@ export const TIMEZONE_OPTIONS: LocaleOption[] = [
   { value: 'Australia/Sydney', label: 'Australia/Sydney (AET)' },
 ]
 
+/** Mirrors the backend's `time_format` values (`kalnostics-new` tenant settings). */
+export const TIME_FORMAT_OPTIONS: LocaleOption[] = [
+  { value: '12h', label: '12-hour (e.g. 03:30 PM)' },
+  { value: '24h', label: '24-hour (e.g. 15:30)' },
+]
+
 export const CURRENCY_OPTIONS: LocaleOption[] = [
   { value: 'INR', label: 'INR — Indian Rupee (₹)' },
   { value: 'USD', label: 'USD — US Dollar ($)' },

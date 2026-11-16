@@ -14,14 +14,18 @@ const makeRow = (groupName: string, groupLayout: string, isDefault: boolean): Re
   id: `r-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
   groupName, groupLayout, parameterName: '', parameterCode: '', method: '',
   nabl: false, cap: false, parameterType: 'Measured', resultEntryMode: 'Manual', calculationFormula: '',
-  reportingUnit: '', resultRounding: '2 Decimal', allowableUnits: '', decimalPlaces: 2, resultType: 'Quantitative',
-  reflexTests: [], criticalValueMin: '', criticalValueMax: '', notes: '', isDefault,
+  reportingUnit: '', resultRounding: '2 Decimal', allowableUnits: '', resultSuggestions: [], defaultValue: '',
+  decimalPlaces: 2, resultType: 'Quantitative',
+  reflexTests: [], overallResultGroups: [], criticalValueMin: '', criticalValueMax: '', notes: '', isDefault,
 })
 
 const deriveDefaultPanels = (row: ResultItem): VisiblePanels => ({
   reflexTest: row.reflexTests.length > 0,
   calculationFormula: !!row.calculationFormula.trim(),
   allowableUnits: !!(row.allowableUnits ?? '').trim(),
+  resultSuggestions: (row.resultSuggestions ?? []).length > 0,
+  defaultValue: !!(row.defaultValue ?? '').trim(),
+  overallResult: row.overallResultGroups.length > 0,
   notes: !!row.notes.trim(),
 })
 
@@ -99,7 +103,7 @@ export function AddResultDialog({
     setExpandedRowId(rowId)
     setVisiblePanelsByRow(prev => {
       const row = results.find(r => r.id === rowId)
-      const current = prev[rowId] ?? (row ? deriveDefaultPanels(row) : { reflexTest: false, calculationFormula: false, allowableUnits: false, notes: false })
+      const current = prev[rowId] ?? (row ? deriveDefaultPanels(row) : { reflexTest: false, calculationFormula: false, allowableUnits: false, resultSuggestions: false, defaultValue: false, overallResult: false, notes: false })
       return { ...prev, [rowId]: { ...current, [key]: true } }
     })
   }
@@ -123,7 +127,6 @@ export function AddResultDialog({
     setCommittedKey(groupDraft.groupName)
   }
 
-  const handleSaveAll = () => commit()
   const handleSaveAndClose = () => { commit(); onClose() }
 
   const filledCount = results.filter(r => r.parameterName.trim() && r.parameterCode.trim()).length
@@ -144,7 +147,6 @@ export function AddResultDialog({
               <Button variant="secondary" size="sm" onClick={() => setSheetOpen(true)}>
                 <GearIcon className="h-3.5 w-3.5" />Customize Fields
               </Button>
-              <Button variant="secondary" size="sm" onClick={handleSaveAll}>Save All Results</Button>
               <Button size="sm" onClick={handleSaveAndClose}>Save &amp; Close</Button>
             </div>
           </div>

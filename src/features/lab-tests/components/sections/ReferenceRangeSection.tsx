@@ -16,7 +16,7 @@ export function ReferenceRangeSection({ data, setData }: { data: LabTest; setDat
   const [formOpen, setFormOpen] = useState(false)
   const [editItem, setEditItem] = useState<ReferenceRangeItem | null>(null)
   const empty = (): ReferenceRangeItem => ({
-    id: `rr-${Date.now()}`, parameter: '', method: '', gender: 'All',
+    id: `rr-${Date.now()}`, parameter: '', method: '', unit: '', gender: 'All',
     ageFrom: '0', ageFromUnit: 'Years', ageTo: '999', ageToUnit: 'Years',
     lowerLimit: '', upperLimit: '', criticalMin: '', criticalMax: '', displayRange: '', abnormalFlagLogic: 'Bold and Red', isDefault: false,
   })
@@ -72,6 +72,7 @@ export function ReferenceRangeSection({ data, setData }: { data: LabTest; setDat
           <div className="grid grid-cols-2 gap-3">
             <ParameterNameSelect results={data.results} value={form.parameter} onChange={v => setForm(p => ({ ...p, parameter: v }))} />
             <AutosuggestInput label="Method" value={form.method} onChange={v => setForm(p => ({ ...p, method: v }))} suggestions={methodSuggestions} placeholder="Type or select a method…" />
+            <Input label="Unit" value={form.unit} onChange={e => setForm(p => ({ ...p, unit: e.target.value }))} placeholder="e.g. mg/dL" />
             <SelectField label="Gender" value={form.gender} onChange={v => setForm(p => ({ ...p, gender: v }))} options={opts(GENDER_OPTIONS)} />
             <div className="grid grid-cols-2 gap-2">
               <Input label="Age From" type="number" value={form.ageFrom} onChange={e => setForm(p => ({ ...p, ageFrom: e.target.value }))} />

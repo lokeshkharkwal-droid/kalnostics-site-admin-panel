@@ -7,13 +7,18 @@ import { Label, TextArea } from '../../controls'
 import { ChevronUpIcon, FlaskIcon, NotesIcon, RulerIcon, SigmaIcon } from '../../icons'
 import { ReflexTestPicker } from '../ReflexTestPicker'
 
-export type ConfigPanelKey = 'reflexTest' | 'calculationFormula' | 'allowableUnits' | 'notes'
+export type ConfigPanelKey =
+  | 'reflexTest' | 'calculationFormula' | 'allowableUnits'
+  | 'resultSuggestions' | 'defaultValue' | 'overallResult' | 'notes'
 export type VisiblePanels = Record<ConfigPanelKey, boolean>
 
 const PANELS: { key: ConfigPanelKey; label: string; icon: (p: { className?: string }) => React.ReactElement }[] = [
   { key: 'reflexTest', label: 'Reflex Test', icon: FlaskIcon },
   { key: 'calculationFormula', label: 'Calculation Formula', icon: SigmaIcon },
   { key: 'allowableUnits', label: 'Allowable Units', icon: RulerIcon },
+  { key: 'resultSuggestions', label: 'Result Suggestions', icon: NotesIcon },
+  { key: 'defaultValue', label: 'Default Value', icon: RulerIcon },
+  { key: 'overallResult', label: 'Overall Result', icon: SigmaIcon },
   { key: 'notes', label: 'Notes', icon: NotesIcon },
 ]
 
@@ -89,6 +94,32 @@ export function ParameterConfigPanel({
             placeholder="e.g. mg/dL, g/L"
             value={row.allowableUnits ?? ''}
             onChange={e => onChange({ allowableUnits: e.target.value })}
+          />
+        )}
+        {visiblePanels.resultSuggestions && (
+          <TextArea
+            label="Result Suggestions"
+            rows={3}
+            placeholder="One suggestion per line"
+            value={(row.resultSuggestions ?? []).join('\n')}
+            onChange={e => onChange({ resultSuggestions: e.target.value.split('\n') })}
+            onBlur={e => onChange({ resultSuggestions: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })}
+          />
+        )}
+        {visiblePanels.defaultValue && (
+          <Input
+            label="Default Value"
+            placeholder="A suggested value or any custom text"
+            value={row.defaultValue ?? ''}
+            onChange={e => onChange({ defaultValue: e.target.value })}
+          />
+        )}
+        {visiblePanels.overallResult && (
+          <Input
+            label="Overall Result Groups"
+            placeholder="Comma-separated group names"
+            value={row.overallResultGroups.join(', ')}
+            onChange={e => onChange({ overallResultGroups: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
           />
         )}
         {visiblePanels.notes && (

@@ -18,6 +18,8 @@ export interface TemplateMeta {
   margin_header: string
   margin_footer: string
   watermark_text: string
+  /** Uploaded watermark image URL; applied automatically (wins over watermark_text). */
+  watermark_image: string
   template_version: string
   custom_css: string
   // Header tab
@@ -30,6 +32,13 @@ export interface TemplateMeta {
   // Footer tab
   footer_name: string
   footer_html: string
+  // Report layout
+  /** Body column layout: 'Single Column' | 'Two Column' | 'Grid'. */
+  body_layout: string
+  /** Logo placement: 'Top Left' | 'Top Center' | 'Top Right' | 'None'. */
+  logo_position: string
+  /** Uploaded-image registry: `{{image:<id>}}` token id → resolved URL. */
+  images: Record<string, string>
 }
 
 /** Full template as returned by GET `/:id` (meta parsed into an object). */

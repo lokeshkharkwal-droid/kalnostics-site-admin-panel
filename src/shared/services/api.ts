@@ -79,9 +79,14 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   // Determine which token to use based on the request path
   if (typeof window !== 'undefined') {
-    const token = config.url?.startsWith('/api/v1/siteadmin')
-      ? localStorage.getItem('siteadmin_token')
-      : localStorage.getItem('access_token')
+    // SiteAdmin routes (kalnostics `/api/v1/siteadmin/*`) and the inventory
+    // backend (reached via the `/inventory-api/*` nginx route) both use the
+    // SiteAdmin token; everything else uses the business access token.
+    const url = config.url ?? ''
+    const token =
+      url.startsWith('/api/v1/siteadmin') || url.startsWith('/inventory-api')
+        ? localStorage.getItem('siteadmin_token')
+        : localStorage.getItem('access_token')
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -129,7 +134,7 @@ api.interceptors.response.use(
     const isAuthRedirect = status === 401 && typeof window !== 'undefined' && !isLoginRequest
 
     if (isAuthRedirect) {
-      if (url.startsWith('/api/v1/siteadmin')) {
+      if (url.startsWith('/api/v1/siteadmin') || url.startsWith('/inventory-api')) {
         localStorage.removeItem('siteadmin_token')
         redirectToLogin()
       } else {

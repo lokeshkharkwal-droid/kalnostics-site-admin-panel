@@ -86,6 +86,16 @@ export function RichEditor({ value, onChange, placeholder, minHeight = 130 }: Ri
     ],
     content: value || '',
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    editorProps: {
+      // `minHeight` must land on the actual contentEditable `.ProseMirror`
+      // element, not EditorContent's outer wrapper div below — the wrapper
+      // has no intrinsic height of its own, so styling it left the real
+      // editable area collapsed to a single empty line (~20px), well short
+      // of the visibly taller box, making most of that box unclickable.
+      attributes: {
+        style: `min-height: ${minHeight}px`,
+      },
+    },
   })
 
   useEffect(() => {
@@ -263,8 +273,7 @@ export function RichEditor({ value, onChange, placeholder, minHeight = 130 }: Ri
       {/* ── Editor area ──────────────────────────────────────────── */}
       <EditorContent
         editor={editor}
-        className="prose prose-sm max-w-none px-3 py-2 text-sm text-notion-text focus:outline-none"
-        style={{ minHeight }}
+        className="prose prose-sm max-w-none px-3 py-2 text-sm text-notion-text focus:outline-none [&_.ProseMirror]:cursor-text"
         data-placeholder={placeholder}
       />
     </div>
