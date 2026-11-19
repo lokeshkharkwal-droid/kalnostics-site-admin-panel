@@ -141,6 +141,8 @@ export function MasterProductFormModal({ product, loading, onClose }: Props) {
   function submit() {
     setFormError('')
     if (!form.name.trim()) return setFormError('Name is required')
+    if (!form.barcodeSymbology) return setFormError('Barcode symbology is required')
+    if (!form.categoryId) return setFormError('Category is required')
     if (form.cost.trim() === '') return setFormError('Unit Cost is required')
     if (form.price.trim() === '') return setFormError('Unit MRP is required')
     mutation.mutate(form)
@@ -279,13 +281,13 @@ export function MasterProductFormModal({ product, loading, onClose }: Props) {
                   />
 
                   <SelectField
-                    label="Barcode symbology"
+                    label="Barcode symbology *"
                     value={form.barcodeSymbology}
                     onChange={(v) => set('barcodeSymbology', v as IMasterProductForm['barcodeSymbology'])}
                     options={BARCODE_OPTIONS}
                     disabled={busy}
                   />
-                  <LabelledSelect label="Category">
+                  <LabelledSelect label="Category *">
                     <PaginatedSelect
                       queryKey={['inventory', 'reference', 'categories', 'mp']}
                       fetchPage={({ page, search, pageSize }) =>
@@ -418,13 +420,36 @@ export function MasterProductFormModal({ product, loading, onClose }: Props) {
                     options={TAX_METHOD_OPTIONS}
                     disabled={busy}
                   />
-                  <Input
-                    label="Alert quantity"
-                    type="number"
-                    value={form.alertQuantity}
-                    onChange={(e) => set('alertQuantity', e.target.value)}
-                    disabled={busy}
-                  />
+                  {/* Alert quantity with its track-quantity checkbox addon (EZHT parity:
+                      the checkbox toggles stock tracking / low-stock alerts; checked by default). */}
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="alert_quantity" className="text-xs font-medium text-notion-sub">
+                      Alert quantity
+                    </label>
+                    <div className="flex">
+                      <input
+                        id="alert_quantity"
+                        type="number"
+                        value={form.alertQuantity}
+                        onChange={(e) => set('alertQuantity', e.target.value)}
+                        disabled={busy}
+                        className="h-8 w-full rounded-l-md border border-notion-line2 bg-white px-2.5 text-sm text-notion-text placeholder:text-notion-faint focus:z-10 focus:border-notion-blue focus:outline-none focus:ring-2 focus:ring-notion-blue/30 disabled:cursor-not-allowed disabled:bg-notion-panel disabled:opacity-60"
+                      />
+                      <label
+                        title="Track quantity — enable low-stock alerts for this product"
+                        className="flex h-8 shrink-0 cursor-pointer items-center rounded-r-md border border-l-0 border-notion-line2 bg-notion-sidebar px-2.5"
+                      >
+                        <input
+                          type="checkbox"
+                          aria-label="Track quantity"
+                          checked={form.isTrackQuantity}
+                          onChange={(e) => set('isTrackQuantity', e.target.checked)}
+                          disabled={busy}
+                          className="h-3.5 w-3.5 accent-notion-blue"
+                        />
+                      </label>
+                    </div>
+                  </div>
 
                   <LabelledSelect label="Brand">
                     <PaginatedSelect
@@ -470,14 +495,6 @@ export function MasterProductFormModal({ product, loading, onClose }: Props) {
                 </div>
 
                 <div className="mt-4 flex items-center gap-8">
-                  <label className="flex items-center gap-2 text-sm text-notion-text">
-                    <Toggle
-                      checked={form.isTrackQuantity}
-                      onChange={(v) => set('isTrackQuantity', v)}
-                      disabled={busy}
-                    />
-                    Track quantity
-                  </label>
                   <label className="flex items-center gap-2 text-sm text-notion-text">
                     <Toggle
                       checked={form.isImportable}

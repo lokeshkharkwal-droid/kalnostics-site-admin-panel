@@ -6,6 +6,7 @@ import { AdminHeader } from '@/widgets/AdminHeader'
 import { Button, DataTable, type Column } from '@/shared/ui'
 import {
   IMPORT_COLUMNS,
+  buildSampleCsv,
   createFromRow,
   type ImportRow,
 } from '../services/import-products.api'
@@ -45,34 +46,24 @@ function parseCsv(text: string): string[][] {
   return rows
 }
 
-/** Map header-ordered cells → an ImportRow using the file's own header row. */
+/**
+ * Map a parsed CSV matrix → ImportRows by matching each known column's header
+ * label (trimmed, case-insensitive) against the file's own header row. Missing
+ * columns default to an empty string, so partially-filled files still import.
+ */
 function rowsFromCsv(matrix: string[][]): ImportRow[] {
   if (matrix.length < 2) return []
-  const header = matrix[0].map((h) => h.trim())
-  const indexOf = (key: string) =>
-    header.findIndex((h) => h.toLowerCase() === key.toLowerCase())
-  const idx: Record<string, number> = {}
-  IMPORT_COLUMNS.forEach((c) => {
-    idx[c] = indexOf(c)
-  })
+  const header = matrix[0].map((h) => h.trim().toLowerCase())
+  const idx = IMPORT_COLUMNS.map((c) => ({
+    key: c.key,
+    i: header.indexOf(c.header.trim().toLowerCase()),
+  }))
   return matrix.slice(1).map((cells) => {
-    const get = (key: keyof ImportRow) => {
-      const i = idx[key]
-      return i >= 0 && i < cells.length ? cells[i] : ''
+    const row = {} as ImportRow
+    for (const { key, i } of idx) {
+      row[key] = i >= 0 && i < cells.length ? cells[i] : ''
     }
-    return {
-      code: get('code'),
-      name: get('name'),
-      category: get('category'),
-      subCategory: get('subCategory'),
-      unit: get('unit'),
-      brand: get('brand'),
-      cost: get('cost'),
-      price: get('price'),
-      hsnCode: get('hsnCode'),
-      taxName: get('taxName'),
-      taxRate: get('taxRate'),
-    }
+    return row
   })
 }
 
@@ -91,12 +82,11 @@ export function ImportProductsPage() {
   const [summary, setSummary] = useState<ImportSummary | null>(null)
 
   function downloadSample() {
-    const csv = `${IMPORT_COLUMNS.join(',')}\n`
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob([buildSampleCsv()], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'master-products-sample.csv'
+    a.download = 'sample_product_import.csv'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -157,16 +147,17 @@ export function ImportProductsPage() {
   }
 
   const columns: Column<ImportRow>[] = [
-    { header: 'Code', cell: (r) => r.code || '—', width: 110 },
-    { header: 'Name', cell: (r) => r.name, width: 180 },
-    { header: 'Category', cell: (r) => r.category || '—', width: 120 },
-    { header: 'Sub-cat', cell: (r) => r.subCategory || '—', width: 110 },
-    { header: 'Unit', cell: (r) => r.unit || '—', width: 80 },
-    { header: 'Brand', cell: (r) => r.brand || '—', width: 100 },
+    { header: 'Code', cell: (r) => r.code || '—', width: 100 },
+    { header: 'Name', cell: (r) => r.name, width: 170 },
+    { header: 'Category', cell: (r) => r.category || '—', width: 100 },
+    { header: 'Sub-cat', cell: (r) => r.subCategory || '—', width: 90 },
+    { header: 'Unit', cell: (r) => r.unit || '—', width: 70 },
     { header: 'Cost', cell: (r) => r.cost || '—', width: 70 },
-    { header: 'Price', cell: (r) => r.price || '—', width: 70 },
-    { header: 'HSN', cell: (r) => r.hsnCode || '—', width: 80 },
-    { header: 'Tax', cell: (r) => (r.taxName ? `${r.taxName} ${r.taxRate}` : '—'), width: 100 },
+    { header: 'MRP', cell: (r) => r.price || '—', width: 70 },
+    { header: 'Alert Qty', cell: (r) => r.alertQuantity || '—', width: 80 },
+    { header: 'Tax', cell: (r) => r.taxName || '—', width: 90 },
+    { header: 'Variants', cell: (r) => r.variants || '—', width: 140 },
+    { header: 'Manufacturer', cell: (r) => r.manufacturer || '—', width: 120 },
   ]
 
   return (
@@ -186,7 +177,8 @@ export function ImportProductsPage() {
         <section className="space-y-3 rounded-xl border border-notion-line bg-white p-4">
           <h2 className="text-sm font-semibold text-notion-text">1. Upload CSV</h2>
           <p className="text-xs text-notion-faint">
-            Columns: {IMPORT_COLUMNS.join(', ')}. The <code>name</code> column is required for each row.
+            Columns: {IMPORT_COLUMNS.map((c) => c.header).join(', ')}. The{' '}
+            <code>Name</code> column is required for each row.
           </p>
           <div className="flex items-center gap-3">
             <input
