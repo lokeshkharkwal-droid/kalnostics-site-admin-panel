@@ -136,3 +136,16 @@ export interface ListTemplatesResult {
   totalPages: number
   page: number
 }
+
+/** One global notification tag (`key` WITHOUT braces) — `GET /siteadmin/templates/tags`. */
+export interface NotificationTag {
+  key: string
+  label: string
+  description: string
+}
+
+/** A labelled group of global notification tags. */
+export interface NotificationTagGroup {
+  label: string
+  tags: NotificationTag[]
+}

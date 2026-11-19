@@ -2,7 +2,8 @@
 
 import { useState, type Dispatch, type SetStateAction } from 'react'
 import { cn } from '@/shared/utils'
-import { AutosuggestInput, Button, Input } from '@/shared/ui'
+import { arrayMove } from '@dnd-kit/sortable'
+import { AutosuggestInput, Button, Input, SortableList } from '@/shared/ui'
 import type { LabTest, ReferenceValueItem } from '../../interfaces'
 import { ABNORMAL_FLAG_OPTIONS, AGE_UNITS, GENDER_OPTIONS, METHODS, opts } from '../../utils/constants'
 import { Modal } from '../Modal'
@@ -38,22 +39,26 @@ export function ReferenceValuesSection({ data, setData }: { data: LabTest; setDa
         <Button size="sm" onClick={() => { setForm(empty()); setEditItem(null); setFormOpen(true) }}><PlusIcon className="h-3.5 w-3.5" />Add Value</Button>
       </div>
 
-      {data.referenceValues.map(r => (
-        <div key={r.id} className={cn('flex items-start justify-between gap-3 rounded-lg border p-3', r.isDefault ? 'border-blue-200 bg-blue-50/40' : 'border-notion-line bg-notion-panel')}>
-          <div className="grid flex-1 grid-cols-4 gap-2 text-xs text-notion-sub">
-            <span><strong>Parameter:</strong> {r.parameter || '—'}</span>
-            <span><strong>Gender:</strong> {r.gender}</span>
-            <span><strong>Age:</strong> {r.ageFrom}–{r.ageTo}</span>
-            <span><strong>Display:</strong> {r.displayRange || '—'}</span>
-            {r.isDefault && <span className="flex items-center gap-1 text-notion-blue"><StarIcon className="h-3 w-3" />Default</span>}
+      {/* Drag a row by its grip to reorder it; the order is saved as each row's sortOrder (mapping.ts). */}
+      <SortableList items={data.referenceValues} getId={r => r.id} onMove={(from, to) => setData(prev => ({ ...prev, referenceValues: arrayMove(prev.referenceValues, from, to) }))} className="space-y-3">
+        {(r, handle) => (
+          <div className={cn('flex items-start justify-between gap-3 rounded-lg border p-3', r.isDefault ? 'border-blue-200 bg-blue-50/40' : 'border-notion-line bg-notion-panel')}>
+            {handle}
+            <div className="grid flex-1 grid-cols-4 gap-2 text-xs text-notion-sub">
+              <span><strong>Parameter:</strong> {r.parameter || '—'}</span>
+              <span><strong>Gender:</strong> {r.gender}</span>
+              <span><strong>Age:</strong> {r.ageFrom}–{r.ageTo}</span>
+              <span><strong>Display:</strong> {r.displayRange || '—'}</span>
+              {r.isDefault && <span className="flex items-center gap-1 text-notion-blue"><StarIcon className="h-3 w-3" />Default</span>}
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <button type="button" title="Edit reference value" onClick={() => { setForm({ ...r }); setEditItem(r); setFormOpen(true) }} className="rounded p-1.5 text-notion-sub hover:bg-notion-hover"><PencilIcon className="h-3.5 w-3.5" /></button>
+              {!r.isDefault && <Button size="sm" variant="secondary" onClick={() => makeDefault(r.id)}>Set Default</Button>}
+              <button type="button" title="Delete reference value" onClick={() => deleteValue(r.id)} className="rounded p-1.5 text-notion-red hover:bg-notion-hover"><TrashIcon className="h-3.5 w-3.5" /></button>
+            </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <button type="button" title="Edit reference value" onClick={() => { setForm({ ...r }); setEditItem(r); setFormOpen(true) }} className="rounded p-1.5 text-notion-sub hover:bg-notion-hover"><PencilIcon className="h-3.5 w-3.5" /></button>
-            {!r.isDefault && <Button size="sm" variant="secondary" onClick={() => makeDefault(r.id)}>Set Default</Button>}
-            <button type="button" title="Delete reference value" onClick={() => deleteValue(r.id)} className="rounded p-1.5 text-notion-red hover:bg-notion-hover"><TrashIcon className="h-3.5 w-3.5" /></button>
-          </div>
-        </div>
-      ))}
+        )}
+      </SortableList>
       {data.referenceValues.length === 0 && (
         <div className="rounded-lg border border-dashed border-notion-line2 py-8 text-center text-sm text-notion-faint">No reference values added yet</div>
       )}

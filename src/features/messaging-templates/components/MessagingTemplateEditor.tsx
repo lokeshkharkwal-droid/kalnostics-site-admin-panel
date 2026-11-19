@@ -22,6 +22,7 @@ import {
 
 import type { MessagingTemplateForm } from '../interfaces'
 import { createTemplate, getTemplate, updateTemplate } from '../services/messaging-templates.api'
+import { NotificationTagList } from './NotificationTagList'
 import {
   APPLICABLE_BRANCH_TYPE_OPTIONS,
   APPLICATION_SCOPE_OPTIONS,
@@ -181,6 +182,23 @@ export function MessagingTemplateEditor({ id }: { id: string }) {
     } finally {
       setSaving(false)
     }
+  }
+
+  // Insert a global tag at the body's caret/selection (a blurred textarea keeps
+  // its selection; read by id since the shared TextArea doesn't forward refs),
+  // then put the caret after the inserted tag.
+  const BODY_ID = 'messaging-template-body'
+  const insertTag = (token: string) => {
+    const el = document.getElementById(BODY_ID) as HTMLTextAreaElement | null
+    const value = form.template
+    const start = el?.selectionStart ?? value.length
+    const end = el?.selectionEnd ?? value.length
+    const pos = start + token.length
+    set('template', value.slice(0, start) + token + value.slice(end))
+    requestAnimationFrame(() => {
+      el?.focus()
+      el?.setSelectionRange(pos, pos)
+    })
   }
 
   const actionBar = (
@@ -392,13 +410,15 @@ export function MessagingTemplateEditor({ id }: { id: string }) {
         {/* Template body — plain monospace textarea for all channels */}
         <Section title="Template Body">
           <TextArea
+            id={BODY_ID}
             label="Body"
             rows={12}
             className={textareaMono}
             value={form.template}
             onChange={(e) => set('template', e.target.value)}
-            placeholder="Enter template text. Use {variable_name} for dynamic values."
+            placeholder="Enter template text. Use {tag} for dynamic values — see Available tags below."
           />
+          <NotificationTagList className="mt-2" onInsert={insertTag} />
         </Section>
 
         {/* Bottom save bar */}

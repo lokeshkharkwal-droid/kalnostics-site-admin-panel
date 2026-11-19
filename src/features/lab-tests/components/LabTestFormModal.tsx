@@ -78,7 +78,7 @@ export function LabTestFormModal({
             <FormBlock id={sectionId('TAT')} title="TAT"><TATSection data={data} set={set} /></FormBlock>
             <FormBlock id={sectionId('Flags')} title="Flags"><FlagsSection data={data} set={set} /></FormBlock>
             <FormBlock id={sectionId('Sample')} title="Sample"><SampleSection data={data} setData={setData} /></FormBlock>
-            <FormBlock id={sectionId('Results')} title="Results"><ResultsSection data={data} setData={setData} /></FormBlock>
+            <FormBlock id={sectionId('Results')} title="Results"><ResultsSection data={data} setData={setData} allowCopy={isCreate} /></FormBlock>
             <FormBlock id={sectionId('Reference Range')} title="Reference Range"><ReferenceRangeSection data={data} setData={setData} /></FormBlock>
             <FormBlock id={sectionId('Reference Values')} title="Reference Values"><ReferenceValuesSection data={data} setData={setData} /></FormBlock>
             <FormBlock id={sectionId('Notes')} title="Notes"><NotesSection data={data} set={set} /></FormBlock>

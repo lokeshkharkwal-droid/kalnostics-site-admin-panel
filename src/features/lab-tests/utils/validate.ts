@@ -1,4 +1,5 @@
 import type { LabTest } from '../interfaces'
+import { validateAgeRestriction } from './ageRestriction'
 
 const num = (s: string): number | null => {
   const t = s.trim()
@@ -27,6 +28,11 @@ export function validateLabTest(t: LabTest): string | null {
     if (v === null || v <= 0) return 'Repeat Interval value is required when Repeat Interval Restriction is on'
     if (!t.intervalUnit) return 'Interval Unit is required when Repeat Interval Restriction is on'
   }
+
+  // Age restriction: both bounds required when on, and min ≤ max (the backend
+  // rejects otherwise — surface it before the request).
+  const ageError = validateAgeRestriction(t)
+  if (ageError) return ageError
 
   // Result parameters.
   for (const r of t.results) {

@@ -113,6 +113,14 @@ export interface LabTest {
   intervalDuration: string
   intervalUnit: string
   intervalOverrideAllowed: boolean
+  // Age Restriction (Basic Details) — strings while editing, like intervalDuration.
+  // Off = no age limit; on = the test may only be ordered for a patient whose
+  // age lies inside minAge..maxAge (units "Days" | "Months" | "Years").
+  ageRestriction: boolean
+  minAge: string
+  minAgeUnit: string
+  maxAge: string
+  maxAgeUnit: string
   // Pricing
   priceMSRP: number
   priceMax: number
@@ -164,6 +172,9 @@ export interface LabTest {
   remarks: string
   references: string
 }
+
+/** The Age Restriction fields of a lab test form (Basic Details). */
+export type AgeRestrictionValue = Pick<LabTest, 'ageRestriction' | 'minAge' | 'minAgeUnit' | 'maxAge' | 'maxAgeUnit'>
 
 /* ─── List query / result ─── */
 export type StatusFilter = '' | 'ACTIVE' | 'INACTIVE'

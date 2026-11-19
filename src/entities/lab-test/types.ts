@@ -46,6 +46,8 @@ export interface LabTestReferenceRangeDto {
   criticalMax?: number
   displayOfReferenceRange?: string
   abnormalFlagLogic?: AbnormalFlag
+  /** Position in the test's whole Reference Range list (1-based), set by drag-to-reorder. */
+  sortOrder?: number
 }
 
 export interface LabTestReferenceValueDto {
@@ -58,6 +60,8 @@ export interface LabTestReferenceValueDto {
   normalValueText: string
   displayOfReferenceRange?: string
   abnormalFlagLogic?: AbnormalFlag
+  /** Position in the test's whole Reference Value list (1-based), set by drag-to-reorder. */
+  sortOrder?: number
 }
 
 /** A reflex-test reference sent on write ({ id, name }); only `id` is persisted. */
@@ -168,6 +172,12 @@ export interface LabTestWriteDto {
   repeatIntervalValue?: number
   repeatIntervalUnit?: RepeatIntervalUnit
   isOverrideAllowed?: boolean
+  /** Age Restriction: when true all four bounds are required (min ≤ max); false = no age limit. */
+  isAgeRestricted?: boolean
+  minAgeValue?: number | null
+  minAgeUnit?: AgeUnit | null
+  maxAgeValue?: number | null
+  maxAgeUnit?: AgeUnit | null
   isActive?: boolean
   usefulFor?: string
   interpretationOfResults?: string
@@ -242,6 +252,12 @@ export interface LabTestEntity {
   repeatIntervalValue: number | null
   repeatIntervalUnit: RepeatIntervalUnit | null
   isOverrideAllowed: boolean
+  /** Age Restriction (bounds are null when off). Optional for older responses. */
+  isAgeRestricted?: boolean
+  minAgeValue?: number | null
+  minAgeUnit?: AgeUnit | null
+  maxAgeValue?: number | null
+  maxAgeUnit?: AgeUnit | null
   isActive: boolean
   usefulFor: string | null
   interpretationOfResults: string | null
@@ -312,6 +328,8 @@ export interface LabTestReferenceRangeEntity {
   criticalMax: string | number | null
   displayOfReferenceRange: string | null
   abnormalFlagLogic: AbnormalFlag
+  /** Drag-to-reorder position (0 = never reordered). Absent on an older backend. */
+  sortOrder?: number
 }
 
 export interface LabTestReferenceValueEntity {
@@ -325,6 +343,8 @@ export interface LabTestReferenceValueEntity {
   normalValueText: string
   displayOfReferenceRange: string | null
   abnormalFlagLogic: AbnormalFlag
+  /** See `LabTestReferenceRangeEntity.sortOrder`. */
+  sortOrder?: number
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

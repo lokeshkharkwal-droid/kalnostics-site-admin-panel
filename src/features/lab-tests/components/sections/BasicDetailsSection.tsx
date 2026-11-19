@@ -4,6 +4,7 @@ import { Input } from '@/shared/ui'
 import type { LabTest } from '../../interfaces'
 import { APPROVAL_WORKFLOWS, INTERVAL_UNITS, PROCESS_METHODS, SAMPLE_PRIORITIES, opts } from '../../utils/constants'
 import { SelectField, YesNoField } from '../controls'
+import { AgeRestrictionFields } from './AgeRestrictionFields'
 
 /* ─── Basic Details Section ───
    Only genuinely tenant-scoped fields are omitted — Department / Category /
@@ -37,6 +38,7 @@ export function BasicDetailsSection({ data, set }: { data: LabTest; set: (f: key
       <div className="grid grid-cols-3 gap-4 pt-1">
         <YesNoField label="Hide in Order Screen" value={data.hideInOrderScreen} onChange={x => set('hideInOrderScreen', x)} />
         <YesNoField label="Repeat Interval Restriction" value={data.repeatIntervalRestriction} onChange={x => set('repeatIntervalRestriction', x)} />
+        <YesNoField label="Age Restriction" value={data.ageRestriction} onChange={x => set('ageRestriction', x)} />
       </div>
 
       {data.repeatIntervalRestriction && (
@@ -46,6 +48,8 @@ export function BasicDetailsSection({ data, set }: { data: LabTest; set: (f: key
           <YesNoField label="Override Allowed" value={data.intervalOverrideAllowed} onChange={x => set('intervalOverrideAllowed', x)} />
         </div>
       )}
+
+      {data.ageRestriction && <AgeRestrictionFields value={data} onChange={set} />}
     </div>
   )
 }

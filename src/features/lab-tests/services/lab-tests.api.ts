@@ -1,5 +1,6 @@
 import { api } from '@/shared/services/api'
 import type { LabTestEntity, LabTestListRow, LabTestWriteDto } from '@/entities/lab-test'
+import type { PageResult } from '@/shared/ui'
 import type { ListLabTestsParams, ListLabTestsResult } from '../interfaces'
 
 /**
@@ -65,4 +66,21 @@ export async function searchLabTestsForReflex(
   if (params.search?.trim()) query.search = params.search.trim()
   const res = await api.get<{ id: string; testName: string }[]>(BASE, { params: query, skipSuccessToast: true })
   return res.data.map(t => ({ id: t.id, name: t.testName }))
+}
+
+/**
+ * One page of `{ id, name }` template options for a `PaginatedSelect` (e.g. the
+ * "Copy Result" test picker) — DEFAULT view, searchable on testName/testCode.
+ */
+export async function searchLabTestOptions(
+  params: { page: number; search?: string; limit?: number },
+): Promise<PageResult> {
+  const query: Record<string, string | number> = { page: params.page, limit: params.limit ?? 20, view: 'DEFAULT' }
+  if (params.search?.trim()) query.search = params.search.trim()
+  const res = await api.get<{ id: string; testName: string }[]>(BASE, { params: query, skipSuccessToast: true })
+  const meta = (res as { meta?: { page?: number; totalPages?: number } }).meta ?? {}
+  return {
+    data: res.data.map(t => ({ id: t.id, name: t.testName })),
+    meta: { page: meta.page ?? params.page, totalPages: meta.totalPages ?? 1 },
+  }
 }
