@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { cn } from '@/shared/utils'
 import { Button } from './button'
 import { ChevronLeftIcon, ChevronRightIcon } from './icons'
+import { SortableScope, useSortableItem } from './sortable'
 
 /* ═══════════════════════════════════════
    DATA TABLE
@@ -64,13 +65,32 @@ interface DataTableProps<T> {
    *  when embedding the table inside another card (e.g. the dashboard). */
   frame?: boolean
   className?: string
+  /** Drag-to-reorder: adds a leading grip column; dropping a row moves it from
+   *  index `from` to index `to` of `rows` (the caller reorders its own data). */
+  onReorder?: (from: number, to: number) => void
 }
 
 const ACTIONS_ID = '__actions__'
+const GRIP_WIDTH = 36
 const DEFAULT_WIDTH = 180
 const DEFAULT_MIN = 48
 const alignClass = (a?: 'left' | 'right' | 'center') =>
   a === 'right' ? 'text-right' : a === 'center' ? 'text-center' : 'text-left'
+
+/** A plain (non-animated) body row that can be dragged by its grip cell. */
+function SortableTr({ id, className, onClick, children }: {
+  id: string
+  className?: string
+  onClick?: () => void
+  children: (handle: ReactNode) => ReactNode
+}) {
+  const { setNodeRef, style, handle, isDragging } = useSortableItem(id)
+  return (
+    <tr ref={setNodeRef} style={style} onClick={onClick} className={cn(className, isDragging && 'bg-white shadow-lg')}>
+      {children(handle)}
+    </tr>
+  )
+}
 
 /**
  * A cell that clips overflowing text with an ellipsis and reveals the full value
@@ -112,7 +132,7 @@ function TruncatedCell({ children, tooltip }: { children: ReactNode; tooltip?: s
 export function DataTable<T>({
   columns, rows, rowKey, loading, emptyMessage = 'No records found',
   startIndex = 0, actions, actionsHeader = 'Actions', actionsWidth = 160,
-  onRowClick, pagination, frame = true, className,
+  onRowClick, pagination, frame = true, className, onReorder,
 }: DataTableProps<T>) {
   const reduce = useReducedMotion()
   const colId = (c: Column<T>) => c.id ?? (typeof c.header === 'string' ? c.header : '')
@@ -140,10 +160,12 @@ export function DataTable<T>({
     window.addEventListener('pointerup', onUp)
   }
 
-  const totalColumns = columns.length + (actions ? 1 : 0)
+  const reorderable = !!onReorder
+  const totalColumns = columns.length + (actions ? 1 : 0) + (reorderable ? 1 : 0)
   const totalWidth =
     columns.reduce((sum, c) => sum + (widths[colId(c)] ?? DEFAULT_WIDTH), 0) +
-    (actions ? widths[ACTIONS_ID] ?? actionsWidth : 0)
+    (actions ? widths[ACTIONS_ID] ?? actionsWidth : 0) +
+    (reorderable ? GRIP_WIDTH : 0)
 
   // Re-mounting the body whenever the data set changes replays the stagger.
   const bodyKey = rows.map(rowKey).join('|')
@@ -157,19 +179,55 @@ export function DataTable<T>({
     show: { opacity: 1, y: 0, transition: { duration: 0.18, ease: 'easeOut' as const } },
   }
 
-  const table = (
+  const rowClass = cn(
+    'group relative transform-gpu border-b border-notion-line/70 transition-colors last:border-0',
+    'even:bg-notion-panel/40',
+    'hover:bg-blue-50/50 hover:shadow-[inset_2px_0_0_0_#2383e2,0_6px_16px_-8px_rgba(35,131,226,0.35)]',
+    onRowClick && 'cursor-pointer',
+  )
+  const renderCells = (row: T, i: number) => (
+    <>
+      {columns.map(c => {
+        const content = c.cell(row, startIndex + i)
+        const truncate = c.truncate ?? true
+        return (
+          <td
+            key={colId(c)}
+            className={cn('px-4 py-2.5 align-middle text-notion-text', alignClass(c.align), c.cellClassName)}
+          >
+            {truncate
+              ? <TruncatedCell tooltip={c.tooltip?.(row)}>{content}</TruncatedCell>
+              : content}
+          </td>
+        )
+      })}
+      {actions && (
+        <td className="whitespace-nowrap px-4 py-2.5" onClick={e => e.stopPropagation()}>
+          {/* Visible by default; on hover-capable (pointer) devices it
+              hides at rest and fades in on row hover. Always visible on touch. */}
+          <div className="flex items-center transition-opacity duration-200 [@media(hover:hover)]:opacity-0 group-hover:[@media(hover:hover)]:opacity-100 [&:has([aria-expanded=true])]:opacity-100">
+            {actions(row)}
+          </div>
+        </td>
+      )}
+    </>
+  )
+
+  const tableEl = (
     <div className="no-scrollbar overflow-x-auto">
       <table
         className="border-collapse text-sm"
         style={{ tableLayout: 'fixed', width: totalWidth, minWidth: '100%' }}
       >
         <colgroup>
+          {reorderable && <col style={{ width: GRIP_WIDTH }} />}
           {columns.map(c => <col key={colId(c)} style={{ width: widths[colId(c)] }} />)}
           {actions && <col style={{ width: widths[ACTIONS_ID] }} />}
         </colgroup>
 
         <thead>
           <tr className="border-b border-notion-line bg-gradient-to-b from-notion-panel to-white text-notion-sub">
+            {reorderable && <th aria-label="Reorder" />}
             {columns.map(c => {
               const id = colId(c)
               const resizable = c.resizable ?? true
@@ -197,7 +255,27 @@ export function DataTable<T>({
           </tr>
         </thead>
 
-        {rows.length > 0 && (
+        {rows.length > 0 && reorderable && (
+          <tbody>
+            {rows.map((row, i) => (
+              <SortableTr
+                key={rowKey(row)}
+                id={rowKey(row)}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                className={rowClass}
+              >
+                {handle => (
+                  <>
+                    <td className="px-1 py-2.5 text-center align-middle">{handle}</td>
+                    {renderCells(row, i)}
+                  </>
+                )}
+              </SortableTr>
+            ))}
+          </tbody>
+        )}
+
+        {rows.length > 0 && !reorderable && (
           <motion.tbody key={bodyKey} variants={containerVariants} initial="hidden" animate="show">
             {rows.map((row, i) => (
               <motion.tr
@@ -205,36 +283,9 @@ export function DataTable<T>({
                 variants={rowVariants}
                 whileHover={reduce ? undefined : { y: -1 }}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className={cn(
-                  'group relative transform-gpu border-b border-notion-line/70 transition-colors last:border-0',
-                  'even:bg-notion-panel/40',
-                  'hover:bg-blue-50/50 hover:shadow-[inset_2px_0_0_0_#2383e2,0_6px_16px_-8px_rgba(35,131,226,0.35)]',
-                  onRowClick && 'cursor-pointer',
-                )}
+                className={rowClass}
               >
-                {columns.map(c => {
-                  const content = c.cell(row, startIndex + i)
-                  const truncate = c.truncate ?? true
-                  return (
-                    <td
-                      key={colId(c)}
-                      className={cn('px-4 py-2.5 align-middle text-notion-text', alignClass(c.align), c.cellClassName)}
-                    >
-                      {truncate
-                        ? <TruncatedCell tooltip={c.tooltip?.(row)}>{content}</TruncatedCell>
-                        : content}
-                    </td>
-                  )
-                })}
-                {actions && (
-                  <td className="whitespace-nowrap px-4 py-2.5" onClick={e => e.stopPropagation()}>
-                    {/* Visible by default; on hover-capable (pointer) devices it
-                        hides at rest and fades in on row hover. Always visible on touch. */}
-                    <div className="flex items-center transition-opacity duration-200 [@media(hover:hover)]:opacity-0 group-hover:[@media(hover:hover)]:opacity-100 [&:has([aria-expanded=true])]:opacity-100">
-                      {actions(row)}
-                    </div>
-                  </td>
-                )}
+                {renderCells(row, i)}
               </motion.tr>
             ))}
           </motion.tbody>
@@ -252,6 +303,10 @@ export function DataTable<T>({
       </table>
     </div>
   )
+
+  const table = onReorder
+    ? <SortableScope ids={rows.map(rowKey)} onMove={onReorder}>{tableEl}</SortableScope>
+    : tableEl
 
   const footer = pagination && pagination.totalPages > 1 && (
     <div className="flex flex-col gap-3 border-t border-notion-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between">

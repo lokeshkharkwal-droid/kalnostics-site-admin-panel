@@ -4,6 +4,7 @@ import type {
   ListTemplatesResult,
   MessagingTemplate,
   MessagingTemplateWriteDto,
+  NotificationTagGroup,
 } from '../interfaces'
 
 /** SITE_ADMIN global messaging/notification templates (shared across every business). */
@@ -36,6 +37,16 @@ export async function listTemplates(params: ListTemplatesParams): Promise<ListTe
     totalPages: meta.totalPages ?? 1,
     page: meta.page ?? params.page ?? 1,
   }
+}
+
+/**
+ * The GLOBAL notification tag catalogue — every tag works in every template
+ * (any channel, any feature). Served by the backend so the editor list can
+ * never drift from what is actually substituted at send time.
+ */
+export async function listNotificationTags(): Promise<NotificationTagGroup[]> {
+  const res = await api.get<NotificationTagGroup[]>(`${BASE}/tags`)
+  return res.data
 }
 
 /** Fetch one global template. */

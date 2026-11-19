@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
+import { arrayMove } from '@dnd-kit/sortable'
 import { Badge, Button, Input } from '@/shared/ui'
 import type { LabTest, ResultItem } from '../../../interfaces'
 import { GROUP_LAYOUTS, METHODS, opts } from '../../../utils/constants'
@@ -82,6 +83,8 @@ export function AddResultDialog({
     setExpandedRowId(prev => (prev === id ? null : prev))
   }
 
+  const moveRow = (from: number, to: number) => setResults(prev => arrayMove(prev, from, to))
+
   const makeDefault = (id: string) =>
     setResults(prev => prev.map(r => ({ ...r, isDefault: r.id === id })))
 
@@ -135,7 +138,8 @@ export function AddResultDialog({
   return (
     <>
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-        <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-notion-line bg-white shadow-xl">
+        {/* Near-full-screen (viewport minus the 1rem overlay padding), fixed height: header and footer stay pinned, only the body scrolls — same as kaltros-fe FULLSCREEN_DIALOG_CONTENT_CLASS. */}
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-notion-line bg-white shadow-xl">
           <div className="flex shrink-0 items-start justify-between gap-4 border-b border-notion-line px-5 py-3.5">
             <div>
               <h2 className="text-sm font-semibold text-notion-text">
@@ -177,6 +181,7 @@ export function AddResultDialog({
                 onMakeDefault={makeDefault}
                 onExpand={id => setExpandedRowId(id)}
                 onOpenSubpanel={openSubpanel}
+                onReorder={moveRow}
               />
 
               {expandedRow && (

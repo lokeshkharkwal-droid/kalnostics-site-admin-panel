@@ -49,6 +49,9 @@ interface RichEditorProps {
   onChange: (html: string) => void
   placeholder?: string
   minHeight?: number
+  /** Fixed height (`minHeight`) that never grows with the content: the text area
+   *  scrolls instead, and the user resizes it by dragging its bottom-right handle. */
+  resizable?: boolean
 }
 
 const FONT_SIZES = ['10px', '11px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px']
@@ -68,7 +71,7 @@ const HIGHLIGHT_COLORS = ['#FEF08A', '#BBF7D0', '#BAE6FD', '#FCA5A5', '#DDD6FE',
  * HTML via `onChange`; ported from the legacy site-admin messaging-templates
  * editor with the accent adapted to the Notion palette.
  */
-export function RichEditor({ value, onChange, placeholder, minHeight = 130 }: RichEditorProps) {
+export function RichEditor({ value, onChange, placeholder, minHeight = 130, resizable = false }: RichEditorProps) {
   const colorInputRef = useRef<HTMLInputElement>(null)
 
   const editor = useEditor({
@@ -92,8 +95,10 @@ export function RichEditor({ value, onChange, placeholder, minHeight = 130 }: Ri
       // has no intrinsic height of its own, so styling it left the real
       // editable area collapsed to a single empty line (~20px), well short
       // of the visibly taller box, making most of that box unclickable.
+      // When resizable, the box height is set on the scrolling wrapper below and
+      // the editable area fills it, so the whole box stays clickable.
       attributes: {
-        style: `min-height: ${minHeight}px`,
+        style: resizable ? 'min-height: 100%' : `min-height: ${minHeight}px`,
       },
     },
   })
@@ -271,11 +276,24 @@ export function RichEditor({ value, onChange, placeholder, minHeight = 130 }: Ri
       </div>
 
       {/* ── Editor area ──────────────────────────────────────────── */}
-      <EditorContent
-        editor={editor}
-        className="prose prose-sm max-w-none px-3 py-2 text-sm text-notion-text focus:outline-none [&_.ProseMirror]:cursor-text"
-        data-placeholder={placeholder}
-      />
+      {resizable ? (
+        <div
+          className="overflow-y-auto"
+          style={{ height: minHeight, minHeight: 48, resize: 'vertical' }}
+        >
+          <EditorContent
+            editor={editor}
+            className="prose prose-sm h-full max-w-none px-3 py-2 text-sm text-notion-text focus:outline-none [&_.ProseMirror]:cursor-text"
+            data-placeholder={placeholder}
+          />
+        </div>
+      ) : (
+        <EditorContent
+          editor={editor}
+          className="prose prose-sm max-w-none px-3 py-2 text-sm text-notion-text focus:outline-none [&_.ProseMirror]:cursor-text"
+          data-placeholder={placeholder}
+        />
+      )}
     </div>
   )
 }

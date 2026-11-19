@@ -46,6 +46,8 @@ export interface LabTestReferenceRangeDto {
   criticalMax?: number
   displayOfReferenceRange?: string
   abnormalFlagLogic?: AbnormalFlag
+  /** Position in the test's whole Reference Range list (1-based), set by drag-to-reorder. */
+  sortOrder?: number
 }
 
 export interface LabTestReferenceValueDto {
@@ -58,6 +60,8 @@ export interface LabTestReferenceValueDto {
   normalValueText: string
   displayOfReferenceRange?: string
   abnormalFlagLogic?: AbnormalFlag
+  /** Position in the test's whole Reference Value list (1-based), set by drag-to-reorder. */
+  sortOrder?: number
 }
 
 /** A reflex-test reference sent on write ({ id, name }); only `id` is persisted. */
@@ -324,6 +328,8 @@ export interface LabTestReferenceRangeEntity {
   criticalMax: string | number | null
   displayOfReferenceRange: string | null
   abnormalFlagLogic: AbnormalFlag
+  /** Drag-to-reorder position (0 = never reordered). Absent on an older backend. */
+  sortOrder?: number
 }
 
 export interface LabTestReferenceValueEntity {
@@ -337,6 +343,8 @@ export interface LabTestReferenceValueEntity {
   normalValueText: string
   displayOfReferenceRange: string | null
   abnormalFlagLogic: AbnormalFlag
+  /** See `LabTestReferenceRangeEntity.sortOrder`. */
+  sortOrder?: number
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

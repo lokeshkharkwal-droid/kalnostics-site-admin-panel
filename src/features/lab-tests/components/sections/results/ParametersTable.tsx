@@ -28,7 +28,7 @@ function stop(e: React.SyntheticEvent) { e.stopPropagation() }
 
 export function ParametersTable({
   rows, visibleColumnKeys, methodSuggestions,
-  onUpdateRow, onDeleteRow, onMakeDefault, onExpand, onOpenSubpanel,
+  onUpdateRow, onDeleteRow, onMakeDefault, onExpand, onOpenSubpanel, onReorder,
 }: {
   rows: ResultItem[]
   visibleColumnKeys: Set<ToggleableColumnKey>
@@ -38,6 +38,8 @@ export function ParametersTable({
   onMakeDefault: (id: string) => void
   onExpand: (id: string) => void
   onOpenSubpanel: (id: string, key: ConfigPanelKey) => void
+  /** Drag-to-reorder: move the row at `from` to `to` (its place is saved as the parameter's sortOrder). */
+  onReorder: (from: number, to: number) => void
 }) {
   const columns: Column<ResultItem>[] = [
     {
@@ -140,6 +142,7 @@ export function ParametersTable({
       rows={rows}
       rowKey={r => r.id}
       onRowClick={row => onExpand(row.id)}
+      onReorder={onReorder}
       emptyMessage="No parameters yet — click “Add Parameter” to start."
       actions={row => (
         <ActionMenu

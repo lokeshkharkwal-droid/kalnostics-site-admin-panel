@@ -94,9 +94,13 @@ function sampleToDto(s: SampleItem): LabTestSampleDto {
 }
 
 function resultToDto(r: ResultItem, t: LabTest, sortOrder: number): LabTestResultParamDto {
+  // Each range/value carries its position in the WHOLE list (not just this parameter's rows), so the
+  // order set by drag-to-reorder, even across parameters, comes back exactly (see `bySortOrder`).
   const ranges = t.referenceRanges
-    .filter(x => x.parameter === r.parameterName)
-    .map((x): LabTestReferenceRangeDto => prune({
+    .map((x, i) => ({ x, sortOrder: i + 1 }))
+    .filter(({ x }) => x.parameter === r.parameterName)
+    .map(({ x, sortOrder }): LabTestReferenceRangeDto => prune({
+      sortOrder,
       method: trimOrUndef(x.method),
       unit: trimOrUndef(x.unit),
       gender: GENDER[x.gender],
@@ -112,11 +116,13 @@ function resultToDto(r: ResultItem, t: LabTest, sortOrder: number): LabTestResul
       abnormalFlagLogic: FLAG[x.abnormalFlagLogic],
     }))
   const values = t.referenceValues
-    .filter(x => x.parameter === r.parameterName)
-    .map((x): LabTestReferenceValueDto | null => {
+    .map((x, i) => ({ x, sortOrder: i + 1 }))
+    .filter(({ x }) => x.parameter === r.parameterName)
+    .map(({ x, sortOrder }): LabTestReferenceValueDto | null => {
       const text = trimOrUndef(x.displayRange)
       if (!text) return null // backend requires a non-empty normalValueText
       return prune({
+        sortOrder,
         method: trimOrUndef(x.method),
         gender: GENDER[x.gender],
         ageFrom: numOrUndef(x.ageFrom),
@@ -233,6 +239,11 @@ export function toWriteDto(t: LabTest): LabTestWriteDto {
 /* ═══════════════════════════════════════
    backend entity → FE LabTest
 ═══════════════════════════════════════ */
+/** Back into the saved list order (`sortOrder`, see `resultToDto`). The sort is stable, so rows that were
+ *  never reordered (all 0) keep the order they arrive in: grouped by parameter, oldest first. */
+const bySortOrder = <T extends { item: { sortOrder?: number } }>(a: T, b: T) =>
+  (a.item.sortOrder ?? 0) - (b.item.sortOrder ?? 0)
+
 export function fromEntity(e: LabTestEntity): LabTest {
   const base = emptyTest()
   const results: LabTest['results'] = (e.resultParams ?? []).map(p => ({
@@ -261,8 +272,10 @@ export function fromEntity(e: LabTestEntity): LabTest {
     notes: p.notes ?? '',
     isDefault: false,
   }))
-  const referenceRanges: LabTest['referenceRanges'] = (e.resultParams ?? []).flatMap(p =>
-    (p.referenceRanges ?? []).map(r => ({
+  const referenceRanges: LabTest['referenceRanges'] = (e.resultParams ?? [])
+    .flatMap(p => (p.referenceRanges ?? []).map(item => ({ p, item })))
+    .sort(bySortOrder)
+    .map(({ p, item: r }) => ({
       id: r.id,
       parameter: p.parameterName,
       method: r.method ?? '',
@@ -279,10 +292,11 @@ export function fromEntity(e: LabTestEntity): LabTest {
       displayRange: r.displayOfReferenceRange ?? '',
       abnormalFlagLogic: FLAG_R[r.abnormalFlagLogic] ?? 'Bold and Red',
       isDefault: false,
-    })),
-  )
-  const referenceValues: LabTest['referenceValues'] = (e.resultParams ?? []).flatMap(p =>
-    (p.referenceValues ?? []).map(val => ({
+    }))
+  const referenceValues: LabTest['referenceValues'] = (e.resultParams ?? [])
+    .flatMap(p => (p.referenceValues ?? []).map(item => ({ p, item })))
+    .sort(bySortOrder)
+    .map(({ p, item: val }) => ({
       id: val.id,
       parameter: p.parameterName,
       method: val.method ?? '',
@@ -294,8 +308,7 @@ export function fromEntity(e: LabTestEntity): LabTest {
       displayRange: val.displayOfReferenceRange ?? val.normalValueText,
       abnormalFlagLogic: FLAG_R[val.abnormalFlagLogic] ?? 'Bold and Red',
       isDefault: false,
-    })),
-  )
+    }))
   const samples: LabTest['samples'] = (e.samples ?? []).map(s => ({
     id: s.id,
     sampleName: '',
