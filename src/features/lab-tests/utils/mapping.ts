@@ -5,10 +5,11 @@
    SITE_ADMIN templates carry no classification / mandatory / settings refs, so
    none are sent here — the backend nulls them regardless.
    ═══════════════════════════════════════════════════════════════════════ */
+import { flagLabelOf, flagValueOf } from './abnormalFlag'
 import { emptyTest } from './constants'
 import type { LabTest, ResultItem, SampleItem } from '../interfaces'
 import type {
-  AbnormalFlag, AgeUnit, ApprovalWorkflow, ContainerType, DayOfWeek, LabTestEntity,
+  AgeUnit, ApprovalWorkflow, ContainerType, DayOfWeek, LabTestEntity,
   LabTestReferenceRangeDto, LabTestReferenceValueDto, LabTestResultParamDto,
   LabTestSampleDto, LabTestWriteDto, ParameterType, ProcessMethod,
   ReferenceGender, RepeatIntervalUnit, ResultEntryMode, ResultGroupLayout,
@@ -29,7 +30,7 @@ const CONTAINER: Record<string, ContainerType> = {
   'Fluoride Tube (Grey)': 'FLUORIDE_TUBE_GREY_TOP', 'Urine Container': 'URINE_CONTAINER',
   'Citrate Tube (Blue)': 'STERILE_CONTAINER', 'Stool Container': 'STERILE_CONTAINER',
 }
-const RESULT_TYPE: Record<string, ResultType> = { Quantitative: 'QUANTITATIVE', Qualitative: 'QUALITATIVE', 'Semi-quantitative': 'QUANTITATIVE' }
+const RESULT_TYPE: Record<string, ResultType> = { Quantitative: 'QUANTITATIVE', Qualitative: 'QUALITATIVE', 'Semi-quantitative': 'SEMI_QUANTITATIVE' }
 const GROUP_LAYOUT: Record<string, ResultGroupLayout> = { 'Tabular Layout': 'TABULAR', 'Sequential Layout': 'SEQUENTIAL' }
 const PARAM_TYPE: Record<string, ParameterType> = { Measured: 'MEASURED', Calculated: 'CALCULATED' }
 const ENTRY_MODE: Record<string, ResultEntryMode> = { Manual: 'MANUAL', Instrument: 'AUTO', Both: 'AUTO' }
@@ -39,10 +40,6 @@ const ROUNDING: Record<string, ResultRounding> = {
 }
 const GENDER: Record<string, ReferenceGender> = { All: 'ALL', Male: 'MALE', Female: 'FEMALE' }
 const AGE_UNIT: Record<string, AgeUnit> = { Days: 'DAYS', Months: 'MONTHS', Years: 'YEARS' }
-const FLAG: Record<string, AbnormalFlag> = {
-  'Bold and Red': 'BOLD_AND_RED', Bold: 'BOLD_ONLY', Italic: 'ITALIC',
-  'Italic and Red': 'COLOUR_HIGHLIGHT', 'Italic Bold': 'ITALIC', 'Bold Italic and Red': 'BOLD_AND_RED',
-}
 const REPEAT_UNIT: Record<string, RepeatIntervalUnit> = { Hours: 'HOURS', Days: 'DAYS', Months: 'MONTHS', Years: 'YEARS' }
 
 /* ─── helpers ─── */
@@ -55,7 +52,7 @@ const PROCESS_METHOD_R = invert(PROCESS_METHOD), SAMPLE_PRIORITY_R = invert(SAMP
   TAT_UNIT_R = invert(TAT_UNIT), DAY_R = invert(DAY), CONTAINER_R = invert(CONTAINER),
   RESULT_TYPE_R = invert(RESULT_TYPE), PARAM_TYPE_R = invert(PARAM_TYPE), ENTRY_MODE_R = invert(ENTRY_MODE),
   ROUNDING_R = invert(ROUNDING), GENDER_R = invert(GENDER), AGE_UNIT_R = invert(AGE_UNIT),
-  GROUP_LAYOUT_R = invert(GROUP_LAYOUT), FLAG_R = invert(FLAG), REPEAT_UNIT_R = invert(REPEAT_UNIT),
+  GROUP_LAYOUT_R = invert(GROUP_LAYOUT), REPEAT_UNIT_R = invert(REPEAT_UNIT),
   APPROVAL_WORKFLOW_R = invert(APPROVAL_WORKFLOW)
 
 const numOrUndef = (s: string | number | null | undefined): number | undefined => {
@@ -113,7 +110,6 @@ function resultToDto(r: ResultItem, t: LabTest, sortOrder: number): LabTestResul
       criticalMin: numOrUndef(x.criticalMin),
       criticalMax: numOrUndef(x.criticalMax),
       displayOfReferenceRange: trimOrUndef(x.displayRange),
-      abnormalFlagLogic: FLAG[x.abnormalFlagLogic],
     }))
   const values = t.referenceValues
     .map((x, i) => ({ x, sortOrder: i + 1 }))
@@ -131,7 +127,6 @@ function resultToDto(r: ResultItem, t: LabTest, sortOrder: number): LabTestResul
         ageToUnit: AGE_UNIT[x.ageToUnit],
         normalValueText: text,
         displayOfReferenceRange: text,
-        abnormalFlagLogic: FLAG[x.abnormalFlagLogic],
       }) as LabTestReferenceValueDto
     })
     .filter((v): v is LabTestReferenceValueDto => v !== null)
@@ -151,6 +146,8 @@ function resultToDto(r: ResultItem, t: LabTest, sortOrder: number): LabTestResul
     allowableUnits: trimOrUndef(r.allowableUnits),
     resultSuggestions: r.resultSuggestions?.length ? r.resultSuggestions : undefined,
     defaultValue: trimOrUndef(r.defaultValue),
+    // Optional style: a blank label is sent as null (on update that CLEARS it); otherwise the enum value.
+    abnormalFlagLogic: r.abnormalFlagLogic ? flagValueOf(r.abnormalFlagLogic) ?? null : null,
     decimalPlaces: r.decimalPlaces ?? undefined,
     criticalMin: numOrUndef(r.criticalValueMin),
     criticalMax: numOrUndef(r.criticalValueMax),
@@ -265,6 +262,7 @@ export function fromEntity(e: LabTestEntity): LabTest {
     defaultValue: p.defaultValue ?? '',
     decimalPlaces: p.decimalPlaces,
     resultType: RESULT_TYPE_R[p.resultType] ?? 'Quantitative',
+    abnormalFlagLogic: flagLabelOf(p.abnormalFlagLogic),
     reflexTests: (p.reflexTests ?? []).map(rt => ({ id: rt.id, name: rt.name })),
     overallResultGroups: p.overallResultGroups ?? [],
     criticalValueMin: p.criticalMin != null ? String(p.criticalMin) : '',
@@ -290,7 +288,6 @@ export function fromEntity(e: LabTestEntity): LabTest {
       criticalMin: r.criticalMin != null ? String(r.criticalMin) : '',
       criticalMax: r.criticalMax != null ? String(r.criticalMax) : '',
       displayRange: r.displayOfReferenceRange ?? '',
-      abnormalFlagLogic: FLAG_R[r.abnormalFlagLogic] ?? 'Bold and Red',
       isDefault: false,
     }))
   const referenceValues: LabTest['referenceValues'] = (e.resultParams ?? [])
@@ -306,7 +303,6 @@ export function fromEntity(e: LabTestEntity): LabTest {
       ageTo: String(val.ageTo),
       ageToUnit: AGE_UNIT_R[val.ageToUnit] ?? 'Years',
       displayRange: val.displayOfReferenceRange ?? val.normalValueText,
-      abnormalFlagLogic: FLAG_R[val.abnormalFlagLogic] ?? 'Bold and Red',
       isDefault: false,
     }))
   const samples: LabTest['samples'] = (e.samples ?? []).map(s => ({

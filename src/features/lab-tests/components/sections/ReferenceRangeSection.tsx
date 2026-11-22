@@ -5,7 +5,7 @@ import { cn } from '@/shared/utils'
 import { arrayMove } from '@dnd-kit/sortable'
 import { AutosuggestInput, Button, Input, SortableList } from '@/shared/ui'
 import type { LabTest, ReferenceRangeItem } from '../../interfaces'
-import { ABNORMAL_FLAG_OPTIONS, AGE_UNITS, GENDER_OPTIONS, METHODS, opts } from '../../utils/constants'
+import { AGE_UNITS, GENDER_OPTIONS, METHODS, opts } from '../../utils/constants'
 import { Modal } from '../Modal'
 import { SelectField } from '../controls'
 import { PencilIcon, PlusIcon, StarIcon, TrashIcon } from '../icons'
@@ -19,7 +19,7 @@ export function ReferenceRangeSection({ data, setData }: { data: LabTest; setDat
   const empty = (): ReferenceRangeItem => ({
     id: `rr-${Date.now()}`, parameter: '', method: '', unit: '', gender: 'All',
     ageFrom: '0', ageFromUnit: 'Years', ageTo: '999', ageToUnit: 'Years',
-    lowerLimit: '', upperLimit: '', criticalMin: '', criticalMax: '', displayRange: '', abnormalFlagLogic: 'Bold and Red', isDefault: false,
+    lowerLimit: '', upperLimit: '', criticalMin: '', criticalMax: '', displayRange: '', isDefault: false,
   })
   const [form, setForm] = useState<ReferenceRangeItem>(empty())
 
@@ -93,9 +93,6 @@ export function ReferenceRangeSection({ data, setData }: { data: LabTest; setDat
             <Input label="Critical Max" value={form.criticalMax} onChange={e => setForm(p => ({ ...p, criticalMax: e.target.value }))} />
             <div className="col-span-2">
               <Input label="Display of Reference Range" value={form.displayRange} onChange={e => setForm(p => ({ ...p, displayRange: e.target.value }))} />
-            </div>
-            <div className="col-span-2">
-              <AutosuggestInput label="Abnormal Flag Logic" value={form.abnormalFlagLogic} onChange={v => setForm(p => ({ ...p, abnormalFlagLogic: v }))} suggestions={ABNORMAL_FLAG_OPTIONS} placeholder="Type or select…" />
             </div>
           </div>
         </Modal>
