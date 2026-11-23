@@ -3,6 +3,7 @@
 import { cn } from '@/shared/utils'
 import { ActionMenu, AutosuggestInput, DataTable, Input, type Column } from '@/shared/ui'
 import type { ResultItem } from '../../../interfaces'
+import { NO_ABNORMAL_FLAG_LABEL, abnormalFlagOptionsFor, flagLabelForResultType } from '../../../utils/abnormalFlag'
 import { PARAMETER_TYPES, RESULT_TYPES, opts } from '../../../utils/constants'
 import { SelectField } from '../../controls'
 import { StarIcon } from '../../icons'
@@ -14,6 +15,7 @@ export const TOGGLEABLE_COLUMNS = [
   { key: 'method', label: 'Method' },
   { key: 'reportingUnit', label: 'Reporting Unit' },
   { key: 'resultType', label: 'Result Type' },
+  { key: 'abnormalFlagLogic', label: 'Abnormal Flag Logic' },
   { key: 'parameterType', label: 'Parameter Type' },
   { key: 'nabl', label: 'NABL' },
   { key: 'cap', label: 'CAP' },
@@ -98,7 +100,19 @@ export function ParametersTable({
     id: 'resultType', header: 'Result Type', width: 160, truncate: false,
     cell: row => (
       <div onClick={stop}>
-        <SelectField value={row.resultType} onChange={v => onUpdateRow(row.id, { resultType: v })} options={opts(RESULT_TYPES)} />
+        <SelectField value={row.resultType} onChange={v => onUpdateRow(row.id, {
+          resultType: v,
+          // A High Low style is Quantitative-only: moving away from Quantitative resets it to its basic style (a blank style stays blank).
+          abnormalFlagLogic: flagLabelForResultType(row.abnormalFlagLogic, v),
+        })} options={opts(RESULT_TYPES)} />
+      </div>
+    ),
+  })
+  if (visibleColumnKeys.has('abnormalFlagLogic')) columns.push({
+    id: 'abnormalFlagLogic', header: 'Abnormal Flag Logic', width: 240, truncate: false,
+    cell: row => (
+      <div onClick={stop}>
+        <SelectField value={row.abnormalFlagLogic} onChange={v => onUpdateRow(row.id, { abnormalFlagLogic: v })} options={abnormalFlagOptionsFor(row.resultType)} placeholder={NO_ABNORMAL_FLAG_LABEL} />
       </div>
     ),
   })

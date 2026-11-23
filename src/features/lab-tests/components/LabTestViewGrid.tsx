@@ -10,6 +10,7 @@ import type {
   LabTestReferenceValueRow, LabTestNotesRow, LabTestOverviewRow,
 } from '@/entities/lab-test'
 import { PencilIcon, PowerIcon, TrashIcon } from './icons'
+import { flagLabelOf } from '../utils/abnormalFlag'
 
 /* ═══════════════════════════════════════
    LAB TEST VIEW GRID
@@ -125,7 +126,7 @@ const VIEW_COLUMNS: Record<LabTestListView, ViewColumn[]> = {
     { header: 'Status', cell: (r) => <StatusBadge active={(r as LabTestResultsRow).isActive} /> },
     { header: 'Parameters', cell: (r) => (
       <StackList items={((r as LabTestResultsRow).resultParams ?? []).map(p =>
-        `${p.parameterName}${p.units ? ` (${p.units})` : ''} · ${fmtEnum(p.resultType)}${p.method ? ` · ${p.method}` : ''}${p.isNabl ? ' · NABL' : ''}${p.isCap ? ' · CAP' : ''}`)} empty="No parameters" />
+        `${p.parameterName}${p.units ? ` (${p.units})` : ''} · ${fmtEnum(p.resultType)}${p.method ? ` · ${p.method}` : ''}${flagLabelOf(p.abnormalFlagLogic) ? ` · ${flagLabelOf(p.abnormalFlagLogic)}` : ''}${p.isNabl ? ' · NABL' : ''}${p.isCap ? ' · CAP' : ''}`)} empty="No parameters" />
     ) },
   ],
   REFERENCE_RANGE: [

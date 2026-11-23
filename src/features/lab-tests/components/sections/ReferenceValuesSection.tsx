@@ -5,7 +5,7 @@ import { cn } from '@/shared/utils'
 import { arrayMove } from '@dnd-kit/sortable'
 import { AutosuggestInput, Button, Input, SortableList } from '@/shared/ui'
 import type { LabTest, ReferenceValueItem } from '../../interfaces'
-import { ABNORMAL_FLAG_OPTIONS, AGE_UNITS, GENDER_OPTIONS, METHODS, opts } from '../../utils/constants'
+import { AGE_UNITS, GENDER_OPTIONS, METHODS, opts } from '../../utils/constants'
 import { Modal } from '../Modal'
 import { SelectField } from '../controls'
 import { PencilIcon, PlusIcon, StarIcon, TrashIcon } from '../icons'
@@ -19,7 +19,7 @@ export function ReferenceValuesSection({ data, setData }: { data: LabTest; setDa
   const empty = (): ReferenceValueItem => ({
     id: `rv-${Date.now()}`, parameter: '', method: '', gender: 'All',
     ageFrom: '0', ageFromUnit: 'Years', ageTo: '999', ageToUnit: 'Years',
-    displayRange: '', abnormalFlagLogic: 'Bold and Red', isDefault: false,
+    displayRange: '', isDefault: false,
   })
   const [form, setForm] = useState<ReferenceValueItem>(empty())
 
@@ -91,9 +91,6 @@ export function ReferenceValuesSection({ data, setData }: { data: LabTest; setDa
                 value={form.displayRange}
                 onChange={e => setForm(p => ({ ...p, displayRange: e.target.value }))}
               />
-            </div>
-            <div className="col-span-2">
-              <AutosuggestInput label="Abnormal Flag Logic" value={form.abnormalFlagLogic} onChange={v => setForm(p => ({ ...p, abnormalFlagLogic: v }))} suggestions={ABNORMAL_FLAG_OPTIONS} placeholder="Type or select…" />
             </div>
           </div>
         </Modal>

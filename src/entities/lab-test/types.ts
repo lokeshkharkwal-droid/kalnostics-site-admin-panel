@@ -18,7 +18,7 @@ export type DayOfWeek =
 export type ContainerType =
   | 'EDTA_TUBE_PURPLE_TOP' | 'PLAIN_TUBE_RED_TOP' | 'FLUORIDE_TUBE_GREY_TOP'
   | 'URINE_CONTAINER' | 'STERILE_CONTAINER'
-export type ResultType = 'QUANTITATIVE' | 'QUALITATIVE' | 'CALCULATED'
+export type ResultType = 'QUANTITATIVE' | 'QUALITATIVE' | 'SEMI_QUANTITATIVE'
 export type ResultGroupLayout = 'TABULAR' | 'SEQUENTIAL'
 export type ParameterType = 'MEASURED' | 'CALCULATED'
 export type ResultEntryMode = 'MANUAL' | 'AUTO'
@@ -26,8 +26,12 @@ export type ResultRounding =
   | 'NO_ROUNDING' | 'ONE_DECIMAL' | 'TWO_DECIMAL' | 'THREE_DECIMAL' | 'WHOLE_NUMBER'
 export type ReferenceGender = 'ALL' | 'MALE' | 'FEMALE'
 export type AgeUnit = 'DAYS' | 'MONTHS' | 'YEARS'
+/** Abnormal Flag Logic v1.3 — a style of a result PARAMETER. The 7 `*_HIGH_LOW` styles need a Quantitative result type. */
 export type AbnormalFlag =
-  | 'BOLD_AND_RED' | 'BOLD_ONLY' | 'ITALIC' | 'UNDERLINE' | 'COLOUR_HIGHLIGHT'
+  | 'RED_ONLY' | 'BOLD_ONLY' | 'ITALIC' | 'BOLD_AND_ITALIC' | 'BOLD_AND_RED' | 'ITALIC_AND_RED'
+  | 'BOLD_ITALIC_AND_RED' | 'UNDERLINE' | 'COLOUR_HIGHLIGHT'
+  | 'RED_HIGH_LOW' | 'BOLD_HIGH_LOW' | 'ITALIC_HIGH_LOW' | 'BOLD_AND_ITALIC_HIGH_LOW'
+  | 'BOLD_AND_RED_HIGH_LOW' | 'ITALIC_AND_RED_HIGH_LOW' | 'BOLD_ITALIC_AND_RED_HIGH_LOW'
 export type RepeatIntervalUnit = 'HOURS' | 'DAYS' | 'MONTHS' | 'YEARS'
 export type ApprovalWorkflow =
   | 'SINGLE_APPROVAL' | 'DUAL_APPROVAL' | 'AUTO_APPROVE' | 'PATHOLOGIST_REVIEW'
@@ -45,7 +49,6 @@ export interface LabTestReferenceRangeDto {
   criticalMin?: number
   criticalMax?: number
   displayOfReferenceRange?: string
-  abnormalFlagLogic?: AbnormalFlag
   /** Position in the test's whole Reference Range list (1-based), set by drag-to-reorder. */
   sortOrder?: number
 }
@@ -59,7 +62,6 @@ export interface LabTestReferenceValueDto {
   ageToUnit?: AgeUnit
   normalValueText: string
   displayOfReferenceRange?: string
-  abnormalFlagLogic?: AbnormalFlag
   /** Position in the test's whole Reference Value list (1-based), set by drag-to-reorder. */
   sortOrder?: number
 }
@@ -87,6 +89,8 @@ export interface LabTestResultParamDto {
   resultSuggestions?: string[]
   /** Pre-filled value for this parameter's result — one of resultSuggestions or any custom text. */
   defaultValue?: string
+  /** How an abnormal result is styled in the report. Optional: omitted/null = no style on create; on update omitted = unchanged, null = clear. */
+  abnormalFlagLogic?: AbnormalFlag | null
   decimalPlaces?: number
   criticalMin?: number
   criticalMax?: number
@@ -300,6 +304,8 @@ export interface LabTestResultParamEntity {
   allowableUnits?: string | null
   resultSuggestions?: string[]
   defaultValue?: string | null
+  /** The parameter's abnormal style (v1.3); null/absent = no style set. */
+  abnormalFlagLogic?: AbnormalFlag | null
   overallResultGroups?: string[]
   decimalPlaces: number
   criticalMin: string | number | null
@@ -327,7 +333,6 @@ export interface LabTestReferenceRangeEntity {
   criticalMin: string | number | null
   criticalMax: string | number | null
   displayOfReferenceRange: string | null
-  abnormalFlagLogic: AbnormalFlag
   /** Drag-to-reorder position (0 = never reordered). Absent on an older backend. */
   sortOrder?: number
 }
@@ -342,7 +347,6 @@ export interface LabTestReferenceValueEntity {
   ageToUnit: AgeUnit
   normalValueText: string
   displayOfReferenceRange: string | null
-  abnormalFlagLogic: AbnormalFlag
   /** See `LabTestReferenceRangeEntity.sortOrder`. */
   sortOrder?: number
 }
@@ -461,6 +465,7 @@ export interface LabTestResultsParamRow {
   method: string | null
   resultType: ResultType
   units: string | null
+  abnormalFlagLogic?: AbnormalFlag | null
   isNabl: boolean
   isCap: boolean
 }
@@ -484,7 +489,6 @@ export interface LabTestRefRangeRow {
   lowerLimit: string | number | null
   upperLimit: string | number | null
   displayOfReferenceRange: string | null
-  flag: AbnormalFlag
 }
 
 export interface LabTestReferenceRangeRow {
@@ -502,7 +506,6 @@ export interface LabTestRefValueRow {
   ageFrom: number
   ageTo: number
   displayValue: string
-  flag: AbnormalFlag
 }
 
 export interface LabTestReferenceValueRow {

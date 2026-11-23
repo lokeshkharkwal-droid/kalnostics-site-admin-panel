@@ -16,7 +16,7 @@ const makeRow = (groupName: string, groupLayout: string, isDefault: boolean): Re
   groupName, groupLayout, parameterName: '', parameterCode: '', method: '',
   nabl: false, cap: false, parameterType: 'Measured', resultEntryMode: 'Manual', calculationFormula: '',
   reportingUnit: '', resultRounding: '2 Decimal', allowableUnits: '', resultSuggestions: [], defaultValue: '',
-  decimalPlaces: 2, resultType: 'Quantitative',
+  decimalPlaces: 2, resultType: 'Quantitative', abnormalFlagLogic: '',
   reflexTests: [], overallResultGroups: [], criticalValueMin: '', criticalValueMax: '', notes: '', isDefault,
 })
 

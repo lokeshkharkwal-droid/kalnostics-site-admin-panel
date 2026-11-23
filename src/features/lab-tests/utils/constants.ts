@@ -157,9 +157,6 @@ export const APPROVAL_WORKFLOWS = ['Single Approval', 'Dual Approval', 'Auto App
 export const SAMPLE_PRIORITIES = ['Routine', 'STAT', 'Urgent']
 export const STATUS_OPTIONS = ['Active', 'Inactive']
 export const SCHEDULE_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-export const ABNORMAL_FLAG_OPTIONS = [
-  'Bold', 'Italic', 'Bold and Red', 'Italic and Red', 'Italic Bold', 'Bold Italic and Red',
-]
 
 /** Build native-<select> option pairs from a plain string list. */
 export const opts = (xs: readonly string[]) => xs.map(x => ({ value: x, label: x }))

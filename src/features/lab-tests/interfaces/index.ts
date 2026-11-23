@@ -52,6 +52,8 @@ export interface ResultItem {
   defaultValue?: string
   decimalPlaces: number
   resultType: string
+  /** Abnormal Flag Logic — optional style label ('' = not set; see utils/abnormalFlag.ts); High Low styles need resultType Quantitative. */
+  abnormalFlagLogic: string
   /** Reflex tests reference existing lab tests by id; name is for display. */
   reflexTests: { id: string; name: string }[]
   /** Overall Result template group names this parameter is linked to (free-text). */
@@ -77,7 +79,6 @@ export interface ReferenceRangeItem {
   criticalMin: string
   criticalMax: string
   displayRange: string
-  abnormalFlagLogic: string
   isDefault: boolean
 }
 
@@ -91,7 +92,6 @@ export interface ReferenceValueItem {
   ageTo: string
   ageToUnit: string
   displayRange: string
-  abnormalFlagLogic: string
   isDefault: boolean
 }
 

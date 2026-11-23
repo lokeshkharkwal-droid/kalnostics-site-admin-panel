@@ -1,5 +1,6 @@
 import type { LabTest } from '../interfaces'
 import { validateAgeRestriction } from './ageRestriction'
+import { ABNORMAL_FLAG_STYLES, allowsHighLow } from './abnormalFlag'
 
 const num = (s: string): number | null => {
   const t = s.trim()
@@ -37,6 +38,12 @@ export function validateLabTest(t: LabTest): string | null {
   // Result parameters.
   for (const r of t.results) {
     if (!r.parameterName.trim()) return 'Every result parameter needs a Parameter Name'
+    // Abnormal Flag Logic is optional: blank is valid for every result type; a non-blank label must be a known style.
+    const style = r.abnormalFlagLogic ? ABNORMAL_FLAG_STYLES.find(f => f.label === r.abnormalFlagLogic) : undefined
+    if (r.abnormalFlagLogic && !style) return `Parameter "${r.parameterName}": unknown Abnormal Flag Logic "${r.abnormalFlagLogic}"`
+    if (style?.isHighLow && !allowsHighLow(r.resultType)) {
+      return `Parameter "${r.parameterName}": "${style.label}" is only available for a Quantitative result type`
+    }
     if (r.parameterType === 'Calculated' && !r.calculationFormula.trim()) {
       return `Calculated parameter "${r.parameterName}" needs a Calculation Formula`
     }
