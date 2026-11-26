@@ -9,11 +9,12 @@ import { useDebouncedValue } from '@/shared/hooks'
 import { STATUS_VARIANT, STATUS_LABEL, STATUS_OPTIONS } from '@/entities/tenant'
 import { listTenants, suspendTenant, reactivateTenant, registerAllWithExchange } from '../services/businesses.api'
 import type { ICreatedCredentials } from '../interfaces'
-import { CreateBusinessModal } from './CreateBusinessModal'
+import { CreateBusinessWizard } from './CreateBusinessWizard'
 import { CredentialsCard } from './CredentialsCard'
 import { ConfigurationModal } from './ConfigurationModal'
 import { SettingsModal } from './SettingsModal'
 import { ExchangeModal } from './ExchangeModal'
+import { SubscriptionModal } from './SubscriptionModal'
 
 const LIMIT = 20
 
@@ -24,7 +25,7 @@ export function BusinessesPage() {
   const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [createdCreds, setCreatedCreds] = useState<ICreatedCredentials | null>(null)
-  const [modal, setModal] = useState<{ tenantId: string; kind: 'config' | 'settings' | 'exchange' } | null>(null)
+  const [modal, setModal] = useState<{ tenantId: string; kind: 'config' | 'settings' | 'exchange' | 'subscription' } | null>(null)
   const [confirm, setConfirm] = useState<{ id: string; name: string; action: 'suspend' | 'reactivate' } | null>(null)
   const queryClient = useQueryClient()
 
@@ -168,6 +169,7 @@ export function BusinessesPage() {
                 { label: 'Configuration', onClick: () => setModal({ tenantId: t.id, kind: 'config' }) },
                 { label: 'Settings', onClick: () => setModal({ tenantId: t.id, kind: 'settings' }) },
                 { label: 'Exchange', onClick: () => setModal({ tenantId: t.id, kind: 'exchange' }) },
+                { label: 'Subscription', onClick: () => setModal({ tenantId: t.id, kind: 'subscription' }) },
                 t.subscriptionStatus === 'suspended'
                   ? { label: 'Reactivate', onClick: () => setConfirm({ id: t.id, name: t.name, action: 'reactivate' }) }
                   : { label: 'Suspend', variant: 'danger', onClick: () => setConfirm({ id: t.id, name: t.name, action: 'suspend' }) },
@@ -179,9 +181,9 @@ export function BusinessesPage() {
         />
       </main>
 
-      {/* Create business modal */}
+      {/* Create business wizard (business → admin → subscription/exchange → review) */}
       {showCreate && (
-        <CreateBusinessModal
+        <CreateBusinessWizard
           onClose={() => setShowCreate(false)}
           onCreated={creds => { setShowCreate(false); setCreatedCreds(creds) }}
         />
@@ -201,6 +203,13 @@ export function BusinessesPage() {
       )}
       {modal?.kind === 'exchange' && (
         <ExchangeModal
+          tenantId={modal.tenantId}
+          name={tenants.find(t => t.id === modal.tenantId)?.name ?? 'Business'}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal?.kind === 'subscription' && (
+        <SubscriptionModal
           tenantId={modal.tenantId}
           name={tenants.find(t => t.id === modal.tenantId)?.name ?? 'Business'}
           onClose={() => setModal(null)}

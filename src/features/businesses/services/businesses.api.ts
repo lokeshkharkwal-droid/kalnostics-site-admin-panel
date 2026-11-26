@@ -219,3 +219,50 @@ export async function getTenantExchangeUsage(id: string): Promise<unknown> {
   const res = await api.get<unknown>(`/api/v1/siteadmin/tenants/${id}/exchange-usage`)
   return res.data ?? null
 }
+
+/** A subscription plan returned by the external Subscription server. */
+export interface ISubscriptionPlan {
+  id: string | number
+  title?: string
+  slug?: string
+  price?: string | number
+  features_json?: Array<{ feature: string }>
+}
+
+/** Register ONE tenant as a client on the Subscription server (idempotent).
+ *  Returns the created/current client record. */
+export async function registerTenantWithSubscription(id: string): Promise<Record<string, unknown>> {
+  const res = await api.post<Record<string, unknown>>(
+    `/api/v1/siteadmin/tenants/${id}/register-subscription`,
+    undefined,
+    { successMessage: 'Registered with Subscription server' },
+  )
+  return res.data
+}
+
+/** Fetch a tenant's current Subscription client record (null if not registered). */
+export async function getTenantSubscriptionStatus(id: string): Promise<Record<string, unknown> | null> {
+  const res = await api.get<Record<string, unknown> | null>(
+    `/api/v1/siteadmin/tenants/${id}/subscription-status`,
+  )
+  return res.data ?? null
+}
+
+/** Fetch the active plans a tenant can be assigned. */
+export async function getTenantSubscriptionPlans(id: string): Promise<ISubscriptionPlan[]> {
+  const res = await api.get<ISubscriptionPlan[]>(`/api/v1/siteadmin/tenants/${id}/subscription-plans`)
+  return (res.data as ISubscriptionPlan[]) ?? []
+}
+
+/** Assign / change a tenant's subscription plan. */
+export async function changeTenantSubscriptionPlan(
+  id: string,
+  planId: string,
+): Promise<Record<string, unknown>> {
+  const res = await api.post<Record<string, unknown>>(
+    `/api/v1/siteadmin/tenants/${id}/change-subscription-plan`,
+    { planId },
+    { successMessage: 'Plan updated' },
+  )
+  return res.data
+}

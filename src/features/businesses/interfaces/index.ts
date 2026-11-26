@@ -152,6 +152,25 @@ export interface ICreateBusinessModalProps {
   onCreated: (creds: ICreatedCredentials) => void
 }
 
+/** Which external registrations the wizard runs after creating the business. */
+export interface IRegisterToggles {
+  registerExchange: boolean
+  registerSubscription: boolean
+}
+
+/** Status of one step in the wizard's sequential registration run. */
+export type IRunStatus = 'pending' | 'running' | 'success' | 'failed' | 'skipped'
+
+export interface IRunStep {
+  status: IRunStatus
+  message?: string
+}
+
+/** The four steps the wizard's run reports on. */
+export type IRunStepKey = 'create' | 'exchange' | 'subscription' | 'plan'
+
+export type IRunResults = Record<IRunStepKey, IRunStep>
+
 export interface ICredentialsCardProps {
   creds: ICreatedCredentials
   onDone: () => void
